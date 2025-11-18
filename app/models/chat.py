@@ -24,7 +24,7 @@ class ChatSession(Base):
 
     # Metadata
     message_count = Column(Integer, default=0, nullable=False)
-    metadata = Column(JSON, nullable=True)  # Custom metadata
+    meta_data = Column(JSON, nullable=True)  # Custom metadata (renamed to avoid SQLAlchemy conflict)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -60,7 +60,7 @@ class ChatMessage(Base):
     tokens_used = Column(Integer, default=0, nullable=False)  # For AI messages
 
     # Metadata
-    metadata = Column(JSON, nullable=True)  # Additional data
+    meta_data = Column(JSON, nullable=True)  # Additional data (renamed to avoid SQLAlchemy conflict)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)

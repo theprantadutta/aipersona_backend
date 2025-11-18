@@ -77,8 +77,8 @@ class KnowledgeBase(Base):
     status = Column(String(50), default="active", nullable=False)  # active, processing, error
     indexed_at = Column(DateTime, nullable=True)
 
-    # Metadata
-    metadata = Column(JSON, nullable=True)
+    # Additional metadata (renamed from 'metadata' to avoid SQLAlchemy conflict)
+    meta_data = Column(JSON, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
