@@ -39,7 +39,7 @@ class User(Base):
     google_play_purchase_token = Column(String(500), nullable=True)
 
     # Relationships
-    personas = relationship("Persona", back_populates="creator", cascade="all, delete-orphan")
+    personas = relationship("Persona", foreign_keys="Persona.creator_id", back_populates="creator", cascade="all, delete-orphan")
     chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
     subscription_events = relationship("SubscriptionEvent", back_populates="user", cascade="all, delete-orphan")
     fcm_tokens = relationship("FCMToken", back_populates="user", cascade="all, delete-orphan")
