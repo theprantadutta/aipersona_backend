@@ -1,6 +1,6 @@
 """API v1 routes"""
 from fastapi import APIRouter
-from app.api.v1 import auth, auth_firebase, ai, personas, files, chat, subscription
+from app.api.v1 import auth, auth_firebase, ai, personas, files, chat, subscription, usage
 
 api_router = APIRouter()
 
@@ -11,6 +11,7 @@ api_router.include_router(personas.router)
 api_router.include_router(files.router)
 api_router.include_router(chat.router)
 api_router.include_router(subscription.router)
+api_router.include_router(usage.router)
 
 # TODO: Add more routers as we build them
 # from app.api.v1 import personas, chat, ai, subscription, usage, marketplace, files, notifications, admin
