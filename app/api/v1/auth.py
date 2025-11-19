@@ -1,6 +1,8 @@
 """Authentication endpoints"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from typing import Optional
+from pydantic import BaseModel
 from app.database import get_db
 from app.schemas.user import UserCreate, UserLogin, UserResponse
 from app.schemas.auth import Token
@@ -102,3 +104,35 @@ async def logout(
     In JWT, logout is primarily handled client-side
     """
     return {"message": "Logged out successfully"}
+
+
+class UserProfileUpdate(BaseModel):
+    """User profile update request"""
+    display_name: Optional[str] = None
+    photo_url: Optional[str] = None
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_user_profile(
+    profile_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update current user profile
+
+    - **display_name**: Update display name
+    - **photo_url**: Update profile photo URL
+
+    Requires: Bearer token in Authorization header
+    """
+    if profile_data.display_name is not None:
+        current_user.display_name = profile_data.display_name
+
+    if profile_data.photo_url is not None:
+        current_user.photo_url = profile_data.photo_url
+
+    db.commit()
+    db.refresh(current_user)
+
+    return current_user
