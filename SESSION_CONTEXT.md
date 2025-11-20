@@ -594,7 +594,7 @@ ENVIRONMENT=production
 
 ### Frontend .env:
 ```env
-GEMINI_API_KEY=AIzaSyC8YzPJShN_jVSGklVyV2_18m4JyuRs8FI
+GEMINI_API_KEY=your_gemini_api_key_here
 API_BASE_URL=https://pranta.vps.webdock.cloud/aipersona
 GOOGLE_WEB_CLIENT_ID=5812510329-fet5s66s1bohf011hbr5e8bb0rkok3dt.apps.googleusercontent.com
 ```
