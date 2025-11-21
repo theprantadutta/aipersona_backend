@@ -105,7 +105,7 @@ def create_persona(
 
 @router.get("/trending", response_model=TrendingPersonasResponse)
 def get_trending_personas(
-    timeframe: str = Query("week", regex="^(day|week|month)$"),
+    timeframe: str = Query("week", pattern="^(day|week|month)$"),
     limit: int = Query(20, ge=1, le=50),
     db: Session = Depends(get_db)
 ):

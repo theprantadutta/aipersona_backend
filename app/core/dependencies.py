@@ -81,3 +81,17 @@ async def get_premium_user(
             detail="Premium subscription required. Upgrade to unlock unlimited access!"
         )
     return current_user
+
+
+async def get_admin_user(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    Dependency to check if user is an admin
+    """
+    if not current_user.is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user

@@ -18,7 +18,7 @@ router = APIRouter(prefix="/files", tags=["files"])
 @router.post("/upload", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(
     file: UploadFile = File(...),
-    category: str = Query("chat_attachment", regex="^(avatar|persona_image|chat_attachment|knowledge_base)$"),
+    category: str = Query("chat_attachment", pattern="^(avatar|persona_image|chat_attachment|knowledge_base)$"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -72,7 +72,7 @@ async def upload_file(
 
 @router.get("", response_model=FileListResponse)
 def get_user_files(
-    category: Optional[str] = Query(None, regex="^(avatar|persona_image|chat_attachment|knowledge_base)$"),
+    category: Optional[str] = Query(None, pattern="^(avatar|persona_image|chat_attachment|knowledge_base)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),

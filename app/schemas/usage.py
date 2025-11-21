@@ -52,5 +52,5 @@ class ExportUsageRequest(BaseModel):
     """Request to export usage data"""
     start_date: date = Field(..., description="Start date for export")
     end_date: date = Field(..., description="End date for export")
-    format: str = Field("json", regex="^(json|csv)$", description="Export format")
+    format: str = Field("json", pattern="^(json|csv)$", description="Export format")
     include_details: bool = Field(True, description="Include detailed breakdown")

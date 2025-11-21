@@ -63,7 +63,7 @@ class ChatSessionListResponse(BaseModel):
 
 class ChatExportRequest(BaseModel):
     """Request to export chat"""
-    format: str = Field(..., regex="^(pdf|txt|json)$", description="Export format: pdf, txt, or json")
+    format: str = Field(..., pattern="^(pdf|txt|json)$", description="Export format: pdf, txt, or json")
     include_timestamps: bool = Field(True, description="Include timestamps in export")
     include_metadata: bool = Field(False, description="Include session metadata")
 

@@ -30,6 +30,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    is_admin = Column(Boolean, default=False, nullable=False)
 
     # Google Play Subscriptions (NO Stripe)
     subscription_tier = Column(String(50), default="free", nullable=False)

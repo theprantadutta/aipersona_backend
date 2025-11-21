@@ -7,6 +7,7 @@ from app.config import settings
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -135,22 +136,59 @@ class SubscriptionService:
             if not plan:
                 raise ValueError(f"Unknown product ID: {purchase_data.product_id}")
 
-            # TODO: In production, verify with Google Play API
-            # from google.oauth2 import service_account
-            # from googleapiclient.discovery import build
-            #
-            # credentials = service_account.Credentials.from_service_account_file(
-            #     settings.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH
-            # )
-            # service = build('androidpublisher', 'v3', credentials=credentials)
-            # result = service.purchases().subscriptions().get(
-            #     packageName=purchase_data.package_name,
-            #     subscriptionId=purchase_data.product_id,
-            #     token=purchase_data.purchase_token
-            # ).execute()
-
-            # For development: Accept all purchases
+            # Verify with Google Play API
             logger.info(f"Verifying purchase for user {user_id}, product {purchase_data.product_id}")
+
+            # Check if Google Play service account file exists
+            if not os.path.exists(settings.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH):
+                logger.warning(f"Google Play service account file not found at {settings.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH}")
+                logger.info("Falling back to development mode - accepting all purchases")
+                # Development mode: Accept all purchases
+                verification_result = {
+                    "kind": "androidpublisher#subscriptionPurchase",
+                    "startTimeMillis": str(int(datetime.utcnow().timestamp() * 1000)),
+                    "expiryTimeMillis": str(int((datetime.utcnow() + timedelta(days=plan["duration_days"])).timestamp() * 1000)),
+                    "autoRenewing": True,
+                    "priceCurrencyCode": "USD",
+                    "paymentState": 1,  # Payment received
+                    "orderId": purchase_data.purchase_token[:20]
+                }
+            else:
+                # Production mode: Verify with Google Play API
+                try:
+                    from google.oauth2 import service_account
+                    from googleapiclient.discovery import build
+
+                    credentials = service_account.Credentials.from_service_account_file(
+                        settings.GOOGLE_PLAY_SERVICE_ACCOUNT_PATH,
+                        scopes=['https://www.googleapis.com/auth/androidpublisher']
+                    )
+                    service = build('androidpublisher', 'v3', credentials=credentials)
+
+                    # Verify the purchase
+                    verification_result = service.purchases().subscriptions().get(
+                        packageName=settings.GOOGLE_PLAY_PACKAGE_NAME,
+                        subscriptionId=purchase_data.product_id,
+                        token=purchase_data.purchase_token
+                    ).execute()
+
+                    # Check if purchase is valid
+                    if verification_result.get('paymentState') != 1:
+                        raise ValueError("Purchase payment not received")
+
+                    # Check if subscription is expired
+                    expiry_time = int(verification_result.get('expiryTimeMillis', 0)) / 1000
+                    if expiry_time < datetime.utcnow().timestamp():
+                        raise ValueError("Subscription has expired")
+
+                    logger.info(f"Successfully verified purchase with Google Play API")
+
+                except ImportError:
+                    logger.error("Google API client library not installed. Run: pip install google-api-python-client google-auth")
+                    raise ValueError("Google Play verification not available - missing dependencies")
+                except Exception as e:
+                    logger.error(f"Google Play API verification failed: {str(e)}")
+                    raise ValueError(f"Purchase verification failed: {str(e)}")
 
             # Calculate expiration date
             if plan["duration"] == "lifetime":

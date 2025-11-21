@@ -24,7 +24,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 @router.get("/sessions", response_model=ChatSessionListResponse)
 def get_chat_sessions(
-    status: Optional[str] = Query(None, regex="^(active|archived|deleted)$"),
+    status: Optional[str] = Query(None, pattern="^(active|archived|deleted)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user),

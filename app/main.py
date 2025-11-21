@@ -48,7 +48,7 @@ if os.path.exists(settings.UPLOAD_DIR):
 async def startup_event():
     """Initialize database and scheduler on startup"""
     print("=" * 70)
-    print("🚀 Starting AI Persona API...")
+    print("[STARTUP] Starting AI Persona API...")
     print("=" * 70)
 
     # Start background scheduler
@@ -56,7 +56,7 @@ async def startup_event():
     start_scheduler()
 
     # Check for required configuration files
-    print("🔍 Checking required configuration files...")
+    print("[CHECK] Checking required configuration files...")
 
     required_files = {
         ".env": ".env file (contains database and API configuration)",
@@ -66,14 +66,14 @@ async def startup_event():
     missing_files = []
     for file_path, description in required_files.items():
         if not os.path.exists(file_path):
-            missing_files.append(f"  ❌ {file_path} - {description}")
-            print(f"❌ Missing: {file_path}")
+            missing_files.append(f"  [ERROR] {file_path} - {description}")
+            print(f"[ERROR] Missing: {file_path}")
         else:
-            print(f"✅ Found: {file_path}")
+            print(f"[OK] Found: {file_path}")
 
     if missing_files:
         error_msg = "\n\n" + "="*70 + "\n"
-        error_msg += "❌ CONFIGURATION ERROR: Required files are missing!\n"
+        error_msg += "[ERROR] CONFIGURATION ERROR: Required files are missing!\n"
         error_msg += "="*70 + "\n\n"
         error_msg += "Missing files:\n"
         error_msg += "\n".join(missing_files)
@@ -86,7 +86,7 @@ async def startup_event():
         sys.exit(1)
 
     # Ensure upload directories exist
-    print("📁 Creating upload directories...")
+    print("[MKDIR] Creating upload directories...")
     upload_dirs = [
         settings.UPLOAD_DIR,
         f"{settings.UPLOAD_DIR}/avatars",
@@ -96,32 +96,45 @@ async def startup_event():
     ]
     for dir_path in upload_dirs:
         os.makedirs(dir_path, exist_ok=True)
-    print("✅ Upload directories ready")
+    print("[OK] Upload directories ready")
 
-    print(f"📊 Database: {settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}")
-    print(f"🔧 Debug mode: {settings.DEBUG}")
-    print(f"🤖 Gemini Model: {settings.GEMINI_MODEL}")
-    print(f"📱 Package: {settings.GOOGLE_PLAY_PACKAGE_NAME}")
+    print(f"[DATABASE] {settings.DATABASE_HOST}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}")
+    print(f"[DEBUG] Debug mode: {settings.DEBUG}")
+    print(f"[AI] Gemini Model: {settings.GEMINI_MODEL}")
+    print(f"[PACKAGE] {settings.GOOGLE_PLAY_PACKAGE_NAME}")
 
     # Initialize database tables
     try:
         init_db()
-        print("✅ Database initialized successfully")
+        print("[OK] Database initialized successfully")
     except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
+        print(f"[ERROR] Database initialization failed: {e}")
         sys.exit(1)
 
+    # Ensure admin user exists
+    try:
+        from app.database import SessionLocal
+        from app.utils import ensure_admin_user
+
+        db = SessionLocal()
+        ensure_admin_user(db)
+        db.close()
+        print("[OK] Admin user verified")
+    except Exception as e:
+        print(f"[WARNING] Admin user setup warning: {e}")
+        # Don't exit - this is not critical for app startup
+
     print("=" * 70)
-    print(f"📍 API running at: http://{settings.HOST}:{settings.PORT}")
-    print(f"📚 API Docs: http://{settings.HOST}:{settings.PORT}/docs")
-    print(f"🔧 ReDoc: http://{settings.HOST}:{settings.PORT}/redoc")
+    print(f"[API] Running at: http://{settings.HOST}:{settings.PORT}")
+    print(f"[DOCS] API Docs: http://{settings.HOST}:{settings.PORT}/docs")
+    print(f"[DOCS] ReDoc: http://{settings.HOST}:{settings.PORT}/redoc")
     print("=" * 70)
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    print("👋 Shutting down AI Persona API...")
+    print("[SHUTDOWN] Shutting down AI Persona API...")
 
     # Stop background scheduler
     from app.scheduler import stop_scheduler
