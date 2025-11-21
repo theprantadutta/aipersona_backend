@@ -6,6 +6,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.models.persona import Persona
 from app.services.persona_service import PersonaService
 from app.schemas.persona import (
     PersonaCreate,
@@ -128,6 +129,41 @@ def get_trending_personas(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching trending personas: {str(e)}"
+        )
+
+
+@router.get("/public", response_model=PersonaListResponse)
+def get_public_personas(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all public personas (no authentication required)
+
+    - **page**: Page number (1-indexed)
+    - **page_size**: Number of personas per page (max 100)
+    """
+    try:
+        skip = (page - 1) * page_size
+        service = PersonaService(db)
+
+        # Get all public personas
+        query = db.query(Persona).filter(Persona.is_public == True, Persona.status == "active")
+        total = query.count()
+        personas = query.order_by(Persona.created_at.desc()).offset(skip).limit(page_size).all()
+
+        return PersonaListResponse(
+            personas=[PersonaResponse.model_validate(p) for p in personas],
+            total=total,
+            page=page,
+            page_size=page_size
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching public personas: {str(e)}"
         )
 
 

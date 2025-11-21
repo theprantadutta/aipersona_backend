@@ -1,7 +1,8 @@
 """Schemas for Persona endpoints"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 from datetime import datetime
+import uuid
 
 
 class PersonaBase(BaseModel):
@@ -54,6 +55,14 @@ class PersonaResponse(PersonaBase):
     created_at: datetime
     updated_at: datetime
 
+    @field_validator('id', 'creator_id', 'cloned_from_persona_id', 'original_creator_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convert UUID objects to strings"""
+        if isinstance(v, uuid.UUID):
+            return str(v)
+        return v
+
     class Config:
         from_attributes = True
 
@@ -92,6 +101,14 @@ class KnowledgeBaseResponse(BaseModel):
     indexed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+
+    @field_validator('id', 'persona_id', mode='before')
+    @classmethod
+    def convert_uuid_to_str(cls, v):
+        """Convert UUID objects to strings"""
+        if isinstance(v, uuid.UUID):
+            return str(v)
+        return v
 
     class Config:
         from_attributes = True
