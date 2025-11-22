@@ -209,11 +209,12 @@ def copy_persona_images():
         # Copy file
         shutil.copy2(source, destination)
 
-        # Store relative path (for database)
-        relative_path = str(destination.relative_to(Path(__file__).parent))
+        # Store relative path (for database) - just "persona_image/filename.jpg"
+        # This matches the format expected by the static files mount
+        relative_path = f"persona_image/{unique_name}"
         image_paths[persona["name"]] = relative_path
 
-        print(f"[OK] Copied: {image_file} -> {unique_name}")
+        print(f"[OK] Copied: {image_file} -> {relative_path}")
 
     return image_paths
 
@@ -265,6 +266,30 @@ def seed_personas(db, user, image_paths):
     return created_count
 
 
+def update_existing_persona_images(db, user, image_paths):
+    """Update existing personas with correct image paths"""
+    updated_count = 0
+
+    for persona_name, image_path in image_paths.items():
+        # Find existing persona
+        persona = db.query(Persona).filter(
+            Persona.name == persona_name,
+            Persona.creator_id == user.id
+        ).first()
+
+        if persona:
+            # Update image path if different
+            if persona.image_path != image_path:
+                persona.image_path = image_path
+                updated_count += 1
+                print(f"[UPDATE] Updated image path for: {persona_name}")
+
+    if updated_count > 0:
+        db.commit()
+
+    return updated_count
+
+
 def main():
     """Main seeding function"""
     print("=" * 60)
@@ -293,11 +318,19 @@ def main():
         print(f"[OK] Created {created_count} new personas")
         print()
 
+        # Step 4: Update existing personas with correct image paths
+        print("Step 4: Updating existing persona image paths...")
+        updated_count = update_existing_persona_images(db, user, image_paths)
+        print(f"[OK] Updated {updated_count} persona image paths")
+        print()
+
         # Summary
         total_personas = db.query(Persona).filter(Persona.creator_id == user.id).count()
         print("=" * 60)
         print("[SUCCESS] Seeding Complete!")
         print(f"   Total personas in database: {total_personas}")
+        print(f"   New personas created: {created_count}")
+        print(f"   Image paths updated: {updated_count}")
         print(f"   Seed user: {user.email}")
         print(f"   User ID: {user.id}")
         print("=" * 60)
