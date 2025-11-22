@@ -105,11 +105,15 @@ class FileService:
                 await self._optimize_image(file_path)
                 file_size = os.path.getsize(file_path)  # Update size after optimization
 
+            # Store relative path (from upload directory) instead of absolute path
+            # This makes the path work correctly for serving static files
+            relative_path = os.path.join(category, unique_filename)
+
             # Create database record
             uploaded_file = UploadedFile(
                 user_id=user_id,
                 file_name=file.filename,
-                file_path=str(file_path),
+                file_path=relative_path,  # Store relative path like "avatar/xyz.jpg"
                 file_size=file_size,
                 mime_type=file.content_type or f"application/{extension}",
                 category=category

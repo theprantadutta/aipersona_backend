@@ -100,6 +100,7 @@ class PersonaService:
             name=persona_data.name,
             description=persona_data.description,
             bio=persona_data.bio,
+            image_path=persona_data.image_path,
             personality_traits=persona_data.personality_traits,
             language_style=persona_data.language_style,
             expertise=persona_data.expertise,
