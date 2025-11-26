@@ -163,47 +163,63 @@ async def authenticate_with_google(
     return await authenticate_with_firebase(firebase_request, db)
 
 
-@router.post("/link-google", status_code=status.HTTP_200_OK)
+@router.post("/link-google", response_model=Token, status_code=status.HTTP_200_OK)
 async def link_google_account(
     request: LinkAccountRequest,
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Link Google account to existing email/password account
+    Link Google account to existing email/password account (no authentication required)
 
-    Requires:
-    - User must be authenticated (has JWT token)
-    - Must provide correct password for verification
-    - Must provide valid Firebase token from Google Sign-In
+    This endpoint is used when:
+    - User tries Google Sign-In but email already exists with password
+    - User enters their password to verify ownership
+    - Accounts are linked and user is logged in
 
     - **firebase_token**: Firebase ID token from Google Sign-In
     - **password**: Current account password for verification
     """
     try:
+        logger.info("🔗 [Link Google] Starting account linking...")
+
+        # Verify Firebase token first
+        decoded_token = verify_firebase_token(request.firebase_token)
+        user_info = get_user_info_from_token(decoded_token)
+
+        logger.info(f"🔗 [Link Google] Firebase token verified for: {user_info['email']}")
+
+        # Find user by email from Firebase token
+        auth_service = AuthService(db)
+        user = auth_service.get_user_by_email(user_info['email'])
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No account found with this email"
+            )
+
         # Verify password
-        if not current_user.password_hash:
+        if not user.password_hash:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Account has no password set"
             )
 
-        if not verify_password(request.password, current_user.password_hash):
+        if not verify_password(request.password, user.password_hash):
+            logger.warning(f"🔗 [Link Google] Incorrect password for: {user.email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect password"
             )
 
-        # Verify Firebase token
-        decoded_token = verify_firebase_token(request.firebase_token)
-        user_info = get_user_info_from_token(decoded_token)
+        logger.info(f"🔗 [Link Google] Password verified for: {user.email}")
 
         # Check if Firebase UID is already linked to another account
         existing_user = db.query(User).filter(
             User.firebase_uid == user_info['firebase_uid']
         ).first()
 
-        if existing_user and existing_user.id != current_user.id:
+        if existing_user and existing_user.id != user.id:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="This Google account is already linked to another user"
@@ -215,33 +231,40 @@ async def link_google_account(
                 User.google_id == user_info['google_id']
             ).first()
 
-            if existing_google_user and existing_google_user.id != current_user.id:
+            if existing_google_user and existing_google_user.id != user.id:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
                     detail="This Google account is already linked to another user"
                 )
 
         # Link the accounts
-        current_user.firebase_uid = user_info['firebase_uid']
-        current_user.google_id = user_info.get('google_id')
-        current_user.display_name = user_info.get('display_name') or current_user.display_name
-        current_user.photo_url = user_info.get('photo_url') or current_user.photo_url
-        current_user.email_verified = user_info['email_verified']
+        user.firebase_uid = user_info['firebase_uid']
+        user.google_id = user_info.get('google_id')
+        user.display_name = user_info.get('display_name') or user.display_name
+        user.photo_url = user_info.get('photo_url') or user.photo_url
+        user.email_verified = user_info['email_verified']
+        user.last_login = datetime.utcnow()
 
         # Update auth provider to indicate both methods available
-        if current_user.auth_provider == 'email':
-            current_user.auth_provider = 'google'  # Primary becomes Google
+        if user.auth_provider == 'email':
+            user.auth_provider = 'google'  # Primary becomes Google
 
         db.commit()
-        db.refresh(current_user)
+        db.refresh(user)
 
-        logger.info(f"Linked Google account to user: {current_user.email}")
+        logger.info(f"✅ [Link Google] Linked Google account to user: {user.email}")
+
+        # Create and return JWT token so user is logged in
+        access_token = auth_service.create_access_token_for_user(user)
 
         return {
-            "message": "Google account linked successfully",
-            "user_id": str(current_user.id)
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user_id": str(user.id)
         }
 
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -249,6 +272,7 @@ async def link_google_account(
         )
     except Exception as e:
         logger.error(f"Account linking error: {e}")
+        logger.exception("Full traceback:")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Account linking failed"
