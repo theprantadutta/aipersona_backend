@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.core.security import decode_access_token
 from app.models.user import User
+import logging
 
 security = HTTPBearer()
+logger = logging.getLogger(__name__)
 
 
 async def get_current_user(
@@ -28,6 +30,7 @@ async def get_current_user(
     # Decode token
     payload = decode_access_token(token)
     if payload is None:
+        logger.error("❌ [Auth] Failed to decode JWT token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
@@ -36,7 +39,9 @@ async def get_current_user(
 
     # Extract user ID from token
     user_id: str = payload.get("sub")
+    logger.info(f"🔐 [Auth] Extracted user_id from token: {user_id}")
     if user_id is None:
+        logger.error("❌ [Auth] No 'sub' claim in token payload")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication credentials",
@@ -44,14 +49,20 @@ async def get_current_user(
         )
 
     # Get user from database
+    logger.info(f"🔐 [Auth] Looking up user with ID: {user_id}")
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
+        logger.error(f"❌ [Auth] User not found in database for ID: {user_id}")
+        # Let's also check how many users exist in total
+        total_users = db.query(User).count()
+        logger.error(f"❌ [Auth] Total users in database: {total_users}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    logger.info(f"✅ [Auth] User found: {user.email}")
     return user
 
 

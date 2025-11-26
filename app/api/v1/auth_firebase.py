@@ -98,6 +98,8 @@ async def authenticate_with_firebase(
             db.commit()
             db.refresh(user)
 
+            logger.info(f"✅ [Firebase Auth] User created with ID: {user.id} (type: {type(user.id).__name__})")
+
             # Create usage tracking for new user
             usage_tracking = UsageTracking(user_id=user.id)
             db.add(usage_tracking)
@@ -107,8 +109,10 @@ async def authenticate_with_firebase(
 
         # Create backend JWT token
         logger.info("🔐 [Firebase Auth] Step 4: Creating JWT token...")
+        logger.info(f"🔐 [Firebase Auth] User ID for token: {user.id} (str: {str(user.id)})")
         access_token = auth_service.create_access_token_for_user(user)
         logger.info(f"🎉 [Firebase Auth] Authentication successful for user: {user.email}")
+        logger.info(f"🎉 [Firebase Auth] Token created, returning user_id: {str(user.id)}")
 
         return {
             "access_token": access_token,
