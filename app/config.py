@@ -67,6 +67,10 @@ class Settings(BaseSettings):
         """Parse allowed file extensions"""
         return [ext.strip().lower() for ext in self.ALLOWED_EXTENSIONS.split(",")]
 
+    # FileRunner Configuration (External File Storage)
+    FILERUNNER_BASE_URL: str = "https://pranta.vps.webdock.cloud/filerunner"
+    FILERUNNER_API_KEY: str = ""
+
     # Email Configuration
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

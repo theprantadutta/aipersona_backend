@@ -1,8 +1,9 @@
-"""File service for handling file uploads"""
+"""File service for handling file uploads via FileRunner"""
 from sqlalchemy.orm import Session
 from app.models.file import UploadedFile
 from app.models.user import User, UsageTracking
 from app.config import settings
+from app.services.filerunner_service import filerunner_service
 from typing import Optional, List, Dict, Any
 from fastapi import UploadFile
 from PIL import Image
@@ -10,13 +11,14 @@ import os
 import uuid
 import aiofiles
 import logging
+import io
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 class FileService:
-    """Service for file upload and management"""
+    """Service for file upload and management using FileRunner"""
 
     def __init__(self, db: Session):
         self.db = db
@@ -24,7 +26,7 @@ class FileService:
         self._ensure_upload_directories()
 
     def _ensure_upload_directories(self):
-        """Create upload directories if they don't exist"""
+        """Create upload directories if they don't exist (for temporary processing)"""
         categories = ["avatar", "persona_image", "chat_attachment", "knowledge_base"]
         for category in categories:
             path = Path(self.upload_dir) / category
@@ -56,6 +58,48 @@ class FileService:
 
         return {"valid": True}
 
+    def _optimize_image_bytes(self, content: bytes, extension: str, max_size: int = 800) -> bytes:
+        """
+        Optimize image in memory (resize and compress)
+
+        Args:
+            content: Image bytes
+            extension: File extension
+            max_size: Maximum width/height in pixels
+
+        Returns:
+            Optimized image bytes
+        """
+        try:
+            img = Image.open(io.BytesIO(content))
+
+            # Convert RGBA to RGB if necessary
+            if img.mode == 'RGBA':
+                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                rgb_img.paste(img, mask=img.split()[3])
+                img = rgb_img
+
+            # Resize if too large
+            if img.width > max_size or img.height > max_size:
+                img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+
+            # Save to bytes with optimization
+            output = io.BytesIO()
+            format_map = {'jpg': 'JPEG', 'jpeg': 'JPEG', 'png': 'PNG', 'gif': 'GIF'}
+            save_format = format_map.get(extension.lower(), 'JPEG')
+
+            if save_format == 'JPEG':
+                img.save(output, format=save_format, optimize=True, quality=85)
+            else:
+                img.save(output, format=save_format, optimize=True)
+
+            return output.getvalue()
+
+        except Exception as e:
+            logger.warning(f"Could not optimize image: {str(e)}")
+            # Return original content if optimization fails
+            return content
+
     async def upload_file(
         self,
         user_id: str,
@@ -63,7 +107,7 @@ class FileService:
         category: str = "chat_attachment"
     ) -> UploadedFile:
         """
-        Upload a file
+        Upload a file to FileRunner
 
         Args:
             user_id: User uploading the file
@@ -84,36 +128,33 @@ class FileService:
             if not user:
                 raise ValueError("User not found")
 
-            # Generate unique filename
+            # Read file content
+            content = await file.read()
+            file_size = len(content)
             extension = self._get_file_extension(file.filename)
-            unique_filename = f"{uuid.uuid4()}.{extension}"
 
-            # Determine save path
-            category_dir = Path(self.upload_dir) / category
-            file_path = category_dir / unique_filename
-
-            # Save file
-            async with aiofiles.open(file_path, 'wb') as out_file:
-                content = await file.read()
-                await out_file.write(content)
-
-            # Get file size
-            file_size = os.path.getsize(file_path)
-
-            # Optimize image if it's an image
+            # Optimize image if it's an avatar or persona image
             if category in ["avatar", "persona_image"] and extension in ["jpg", "jpeg", "png"]:
-                await self._optimize_image(file_path)
-                file_size = os.path.getsize(file_path)  # Update size after optimization
+                content = self._optimize_image_bytes(content, extension)
+                file_size = len(content)
 
-            # Store relative path (from upload directory) instead of absolute path
-            # This makes the path work correctly for serving static files
-            relative_path = os.path.join(category, unique_filename)
+            # Upload to FileRunner
+            filerunner_response = await filerunner_service.upload_file(
+                file_content=content,
+                filename=file.filename,
+                content_type=file.content_type or f"application/{extension}",
+                category=category
+            )
 
-            # Create database record
+            # Extract FileRunner file ID and construct URL
+            filerunner_file_id = filerunner_response.get('file_id')
+            filerunner_url = filerunner_service.get_file_url(filerunner_file_id)
+
+            # Create database record with FileRunner URL as file_path
             uploaded_file = UploadedFile(
                 user_id=user_id,
                 file_name=file.filename,
-                file_path=relative_path,  # Store relative path like "avatar/xyz.jpg"
+                file_path=filerunner_url,  # Store full FileRunner URL
                 file_size=file_size,
                 mime_type=file.content_type or f"application/{extension}",
                 category=category
@@ -129,38 +170,12 @@ class FileService:
             self.db.commit()
             self.db.refresh(uploaded_file)
 
+            logger.info(f"File uploaded to FileRunner: {filerunner_file_id} for user {user_id}")
             return uploaded_file
 
         except Exception as e:
             logger.error(f"Error uploading file: {str(e)}")
             raise
-
-    async def _optimize_image(self, file_path: Path, max_size: int = 800):
-        """
-        Optimize image file (resize and compress)
-
-        Args:
-            file_path: Path to the image file
-            max_size: Maximum width/height in pixels
-        """
-        try:
-            with Image.open(file_path) as img:
-                # Convert RGBA to RGB if necessary
-                if img.mode == 'RGBA':
-                    rgb_img = Image.new('RGB', img.size, (255, 255, 255))
-                    rgb_img.paste(img, mask=img.split()[3])
-                    img = rgb_img
-
-                # Resize if too large
-                if img.width > max_size or img.height > max_size:
-                    img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-
-                # Save with optimization
-                img.save(file_path, optimize=True, quality=85)
-
-        except Exception as e:
-            logger.warning(f"Could not optimize image {file_path}: {str(e)}")
-            # Don't fail upload if optimization fails
 
     def get_file_by_id(self, file_id: str, user_id: Optional[str] = None) -> Optional[UploadedFile]:
         """
@@ -217,12 +232,10 @@ class FileService:
         if not file:
             raise ValueError("File not found or access denied")
 
-        # Delete physical file
-        try:
-            if os.path.exists(file.file_path):
-                os.remove(file.file_path)
-        except Exception as e:
-            logger.warning(f"Could not delete physical file {file.file_path}: {str(e)}")
+        # Note: FileRunner file deletion requires JWT auth
+        # For now, we just delete the database record
+        # The FileRunner file will remain (could implement cleanup later)
+        logger.warning(f"FileRunner file not deleted (requires JWT): {file.file_path}")
 
         # Update storage usage
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -237,15 +250,16 @@ class FileService:
 
         return True
 
-    def get_file_url(self, file: UploadedFile, base_url: str) -> str:
+    def get_file_url(self, file: UploadedFile, base_url: str = None) -> str:
         """
         Get URL to access the file
 
         Args:
             file: UploadedFile instance
-            base_url: Base URL of the API
+            base_url: Base URL (ignored, file_path already contains FileRunner URL)
 
         Returns:
-            Full URL to access the file
+            Full URL to access the file (FileRunner URL)
         """
-        return f"{base_url}/api/v1/files/{file.id}"
+        # file_path now contains the full FileRunner URL
+        return file.file_path

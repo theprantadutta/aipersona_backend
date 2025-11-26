@@ -1,9 +1,8 @@
 """File API endpoints"""
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from typing import Optional
-import os
 
 from app.database import get_db
 from app.core.dependencies import get_current_user
@@ -23,7 +22,7 @@ async def upload_file(
     db: Session = Depends(get_db)
 ):
     """
-    Upload a file
+    Upload a file to FileRunner
 
     - **file**: The file to upload
     - **category**: File category (avatar, persona_image, chat_attachment, knowledge_base)
@@ -31,7 +30,7 @@ async def upload_file(
     Supported formats: jpg, jpeg, png, gif, pdf, txt, mp3, wav, m4a
     Maximum file size: 10MB
 
-    Returns file metadata including ID and URL to access the file
+    Returns file metadata including ID and FileRunner URL to access the file
     """
     try:
         service = FileService(db)
@@ -41,18 +40,17 @@ async def upload_file(
             category=category
         )
 
-        # Build file URL
-        base_url = f"https://{settings.DATABASE_HOST}" if settings.DATABASE_HOST != "localhost" else "http://localhost:8000"
-        file_url = service.get_file_url(uploaded_file, base_url)
+        # file_path now contains the full FileRunner URL
+        file_url = service.get_file_url(uploaded_file)
 
         response = FileUploadResponse(
             id=str(uploaded_file.id),
-            file_path=uploaded_file.file_path,
+            file_path=uploaded_file.file_path,  # FileRunner URL
             file_name=uploaded_file.file_name,
             file_size=uploaded_file.file_size,
             mime_type=uploaded_file.mime_type,
             category=uploaded_file.category,
-            url=file_url,
+            url=file_url,  # Same as file_path (FileRunner URL)
             created_at=uploaded_file.created_at
         )
 
@@ -95,18 +93,15 @@ def get_user_files(
             limit=page_size
         )
 
-        # Build URLs
-        base_url = f"https://{settings.DATABASE_HOST}" if settings.DATABASE_HOST != "localhost" else "http://localhost:8000"
-
         file_responses = [
             FileUploadResponse(
                 id=str(f.id),
-                file_path=f.file_path,
+                file_path=f.file_path,  # FileRunner URL
                 file_name=f.file_name,
                 file_size=f.file_size,
                 mime_type=f.mime_type,
                 category=f.category,
-                url=service.get_file_url(f, base_url),
+                url=service.get_file_url(f),  # Same as file_path
                 created_at=f.created_at
             )
             for f in files
@@ -133,10 +128,10 @@ async def get_file(
     db: Session = Depends(get_db)
 ):
     """
-    Download/view a file by ID
+    Get file info by ID
 
-    Returns the actual file content
-    User can only access their own files
+    Returns a redirect to the FileRunner URL
+    Note: Client needs to include X-API-Key header when accessing the FileRunner URL
     """
     try:
         service = FileService(db)
@@ -148,17 +143,17 @@ async def get_file(
                 detail="File not found or access denied"
             )
 
-        if not os.path.exists(file.file_path):
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="File not found on disk"
-            )
-
-        return FileResponse(
-            path=file.file_path,
-            media_type=file.mime_type,
-            filename=file.file_name
-        )
+        # Return file info with FileRunner URL
+        return {
+            "id": str(file.id),
+            "file_name": file.file_name,
+            "file_path": file.file_path,  # FileRunner URL
+            "file_size": file.file_size,
+            "mime_type": file.mime_type,
+            "category": file.category,
+            "url": file.file_path,  # FileRunner URL
+            "created_at": file.created_at.isoformat() if file.created_at else None
+        }
 
     except HTTPException:
         raise
@@ -179,7 +174,7 @@ def delete_file(
     Delete a file
 
     User can only delete their own files
-    This will delete both the database record and the physical file
+    This will delete the database record (FileRunner file deletion requires separate handling)
     """
     try:
         service = FileService(db)
