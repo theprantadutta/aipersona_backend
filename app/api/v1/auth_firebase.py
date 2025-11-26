@@ -205,6 +205,12 @@ async def link_google_account(
                 detail="Account has no password set"
             )
 
+        # Debug: Log password verification details (remove in production!)
+        logger.info(f"🔗 [Link Google] Verifying password for: {user.email}")
+        logger.info(f"🔗 [Link Google] Password hash exists: {bool(user.password_hash)}")
+        logger.info(f"🔗 [Link Google] Password hash (first 20 chars): {user.password_hash[:20] if user.password_hash else 'None'}...")
+        logger.info(f"🔗 [Link Google] Password received length: {len(request.password)}")
+
         if not verify_password(request.password, user.password_hash):
             logger.warning(f"🔗 [Link Google] Incorrect password for: {user.email}")
             raise HTTPException(
