@@ -90,4 +90,4 @@ class SendMessageRequest(BaseModel):
 class SendMessageResponse(BaseModel):
     """Response after sending a message"""
     user_message: ChatMessageResponse
-    ai_response: ChatMessageResponse
+    ai_message: ChatMessageResponse
