@@ -47,6 +47,8 @@ class PersonaResponse(PersonaBase):
     """Schema for persona response"""
     id: str
     creator_id: str
+    creator_name: Optional[str] = None
+    creator_avatar_url: Optional[str] = None
     image_path: Optional[str] = None
     status: str
     conversation_count: int

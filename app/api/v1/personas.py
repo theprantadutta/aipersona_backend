@@ -1,6 +1,6 @@
 """Persona API endpoints"""
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
 from app.database import get_db
@@ -146,10 +146,12 @@ def get_public_personas(
     """
     try:
         skip = (page - 1) * page_size
-        service = PersonaService(db)
 
-        # Get all public personas
-        query = db.query(Persona).filter(Persona.is_public == True, Persona.status == "active")
+        # Get all public personas with creator info
+        query = db.query(Persona).options(joinedload(Persona.creator)).filter(
+            Persona.is_public == True,
+            Persona.status == "active"
+        )
         total = query.count()
         personas = query.order_by(Persona.created_at.desc()).offset(skip).limit(page_size).all()
 

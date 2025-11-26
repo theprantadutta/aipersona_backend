@@ -55,6 +55,20 @@ class Persona(Base):
     chat_sessions = relationship("ChatSession", back_populates="persona", cascade="all, delete-orphan")
     marketplace_listing = relationship("MarketplacePersona", back_populates="persona", uselist=False)
 
+    @property
+    def creator_name(self) -> str:
+        """Get creator's display name"""
+        if self.creator:
+            return self.creator.display_name or self.creator.email.split('@')[0]
+        return "Unknown"
+
+    @property
+    def creator_avatar_url(self) -> str:
+        """Get creator's avatar URL"""
+        if self.creator:
+            return self.creator.photo_url or ""
+        return ""
+
     def __repr__(self):
         return f"<Persona(id={self.id}, name={self.name}, creator_id={self.creator_id})>"
 

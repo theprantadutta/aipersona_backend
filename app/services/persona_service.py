@@ -1,5 +1,5 @@
 """Persona service for business logic"""
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_, desc
 from app.models.persona import Persona, KnowledgeBase
 from app.models.user import User, UsageTracking
@@ -24,7 +24,7 @@ class PersonaService:
         Get persona by ID
         If user_id provided, checks if user has access
         """
-        query = self.db.query(Persona).filter(Persona.id == persona_id)
+        query = self.db.query(Persona).options(joinedload(Persona.creator)).filter(Persona.id == persona_id)
 
         if user_id:
             # User can access their own personas or public personas
@@ -45,7 +45,7 @@ class PersonaService:
         limit: int = 50
     ) -> tuple[List[Persona], int]:
         """Get all personas created by a user"""
-        query = self.db.query(Persona).filter(Persona.creator_id == user_id)
+        query = self.db.query(Persona).options(joinedload(Persona.creator)).filter(Persona.creator_id == user_id)
 
         if status:
             query = query.filter(Persona.status == status)
@@ -264,7 +264,7 @@ class PersonaService:
         # Get public personas sorted by conversation count
         # For simplicity, we're just sorting by conversation_count
         # In production, you might want a more sophisticated algorithm
-        personas = self.db.query(Persona).filter(
+        personas = self.db.query(Persona).options(joinedload(Persona.creator)).filter(
             Persona.is_public == True,
             Persona.status == "active",
             Persona.created_at >= threshold
@@ -332,7 +332,7 @@ class PersonaService:
         limit: int = 20
     ) -> tuple[List[Persona], int]:
         """Search public personas by name, description, or tags"""
-        db_query = self.db.query(Persona).filter(
+        db_query = self.db.query(Persona).options(joinedload(Persona.creator)).filter(
             Persona.is_public == True,
             Persona.status == "active"
         )
