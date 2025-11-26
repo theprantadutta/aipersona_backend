@@ -1,6 +1,7 @@
 """
 FastAPI dependencies for request handling
 """
+from uuid import UUID as PyUUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
@@ -50,7 +51,16 @@ async def get_current_user(
 
     # Get user from database
     logger.info(f"🔐 [Auth] Looking up user with ID: {user_id}")
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        user_uuid = PyUUID(user_id)
+    except (ValueError, TypeError) as e:
+        logger.error(f"❌ [Auth] Invalid UUID format for user_id: {user_id}, error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID format",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = db.query(User).filter(User.id == user_uuid).first()
     if user is None:
         logger.error(f"❌ [Auth] User not found in database for ID: {user_id}")
         # Let's also check how many users exist in total
