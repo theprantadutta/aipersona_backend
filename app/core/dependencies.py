@@ -66,6 +66,10 @@ async def get_current_user(
         # Let's also check how many users exist in total
         total_users = db.query(User).count()
         logger.error(f"❌ [Auth] Total users in database: {total_users}")
+        # Log all existing user IDs for debugging
+        all_users = db.query(User).all()
+        for u in all_users:
+            logger.error(f"❌ [Auth] Existing user: id={u.id}, email={u.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
