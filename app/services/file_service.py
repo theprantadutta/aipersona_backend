@@ -153,7 +153,7 @@ class FileService:
             # Create database record with FileRunner URL as file_path
             uploaded_file = UploadedFile(
                 user_id=user_id,
-                file_name=file.filename,
+                original_name=file.filename,
                 file_path=filerunner_url,  # Store full FileRunner URL
                 file_size=file_size,
                 mime_type=file.content_type or f"application/{extension}",

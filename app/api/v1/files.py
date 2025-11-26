@@ -46,7 +46,7 @@ async def upload_file(
         response = FileUploadResponse(
             id=str(uploaded_file.id),
             file_path=uploaded_file.file_path,  # FileRunner URL
-            file_name=uploaded_file.file_name,
+            file_name=uploaded_file.original_name,
             file_size=uploaded_file.file_size,
             mime_type=uploaded_file.mime_type,
             category=uploaded_file.category,
@@ -97,7 +97,7 @@ def get_user_files(
             FileUploadResponse(
                 id=str(f.id),
                 file_path=f.file_path,  # FileRunner URL
-                file_name=f.file_name,
+                file_name=f.original_name,
                 file_size=f.file_size,
                 mime_type=f.mime_type,
                 category=f.category,
@@ -146,7 +146,7 @@ async def get_file(
         # Return file info with FileRunner URL
         return {
             "id": str(file.id),
-            "file_name": file.file_name,
+            "file_name": file.original_name,
             "file_path": file.file_path,  # FileRunner URL
             "file_size": file.file_size,
             "mime_type": file.mime_type,
