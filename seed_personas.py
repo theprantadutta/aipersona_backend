@@ -16,6 +16,7 @@ from app.models.user import User, UsageTracking
 from app.models.persona import Persona
 from app.core.security import get_password_hash
 from app.services.filerunner_service import filerunner_service
+from app.config import settings
 
 
 # Sample personas data
@@ -140,25 +141,32 @@ PERSONAS_DATA = [
 ]
 
 
-def get_or_create_seed_user(db):
-    """Get or create the seed user that will own all personas"""
-    seed_email = "seed@aipersona.app"
+def get_or_create_admin_user(db):
+    """Get or create the admin user that will own all default personas"""
+    admin_email = settings.ADMIN_EMAIL
+    admin_password = settings.ADMIN_PASSWORD
 
-    # Check if seed user exists
-    user = db.query(User).filter(User.email == seed_email).first()
+    # Check if admin user exists
+    user = db.query(User).filter(User.email == admin_email).first()
 
     if user:
-        print(f"[OK] Using existing seed user: {seed_email}")
+        print(f"[OK] Using existing admin user: {admin_email}")
+        # Ensure admin has is_admin flag set
+        if not user.is_admin:
+            user.is_admin = True
+            db.commit()
+            print(f"[OK] Updated user to admin: {admin_email}")
         return user
 
-    # Create seed user
-    print(f"Creating seed user: {seed_email}")
+    # Create admin user
+    print(f"Creating admin user: {admin_email}")
     user = User(
-        email=seed_email,
-        password_hash=get_password_hash("SeedUser123!"),
-        display_name="AI Persona Team",
+        email=admin_email,
+        password_hash=get_password_hash(admin_password),
+        display_name="AI Persona Admin",
         is_active=True,
-        subscription_tier="lifetime",  # Give seed user lifetime premium
+        is_admin=True,
+        subscription_tier="lifetime",  # Give admin user lifetime premium
         auth_provider="email",
         email_verified=True
     )
@@ -172,7 +180,7 @@ def get_or_create_seed_user(db):
     db.add(usage)
     db.commit()
 
-    print(f"[OK] Created seed user: {seed_email}")
+    print(f"[OK] Created admin user: {admin_email}")
     return user
 
 
@@ -319,9 +327,9 @@ async def main_async():
     db = SessionLocal()
 
     try:
-        # Step 1: Get or create seed user
-        print("Step 1: Setting up seed user...")
-        user = get_or_create_seed_user(db)
+        # Step 1: Get or create admin user
+        print("Step 1: Setting up admin user...")
+        user = get_or_create_admin_user(db)
         print()
 
         # Step 2: Upload images to FileRunner
@@ -349,8 +357,9 @@ async def main_async():
         print(f"   Total personas in database: {total_personas}")
         print(f"   New personas created: {created_count}")
         print(f"   Image URLs updated: {updated_count}")
-        print(f"   Seed user: {user.email}")
+        print(f"   Admin user: {user.email}")
         print(f"   User ID: {user.id}")
+        print(f"   Is Admin: {user.is_admin}")
         print(f"   Storage: FileRunner")
         print("=" * 60)
 
