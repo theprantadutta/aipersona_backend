@@ -3,9 +3,8 @@ Seed script to populate database with sample personas
 Run with: python seed_personas.py
 """
 import sys
-import os
+import asyncio
 from pathlib import Path
-import shutil
 import uuid
 from datetime import datetime
 
@@ -16,6 +15,7 @@ from app.database import SessionLocal
 from app.models.user import User, UsageTracking
 from app.models.persona import Persona
 from app.core.security import get_password_hash
+from app.services.filerunner_service import filerunner_service
 
 
 # Sample personas data
@@ -176,22 +176,30 @@ def get_or_create_seed_user(db):
     return user
 
 
-def copy_persona_images():
-    """Copy persona images from frontend to backend uploads folder"""
-    # Paths
-    frontend_images = Path(__file__).parent.parent / "ai_persona" / "persona_images"
-    backend_uploads = Path(__file__).parent / "uploads" / "persona_image"
+def get_content_type(filename: str) -> str:
+    """Get content type from filename extension"""
+    ext = filename.lower().split('.')[-1]
+    content_types = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+    }
+    return content_types.get(ext, 'application/octet-stream')
 
-    # Create backend upload directory if it doesn't exist
-    backend_uploads.mkdir(parents=True, exist_ok=True)
+
+async def upload_persona_images_to_filerunner():
+    """Upload persona images to FileRunner and return URLs"""
+    # Path to frontend persona images
+    frontend_images = Path(__file__).parent.parent / "ai_persona" / "persona_images"
 
     if not frontend_images.exists():
         print(f"[WARN] Frontend persona_images folder not found at: {frontend_images}")
         print("Please ensure the persona_images folder is in the correct location.")
         return {}
 
-    # Copy images and track paths
-    image_paths = {}
+    # Upload images and track URLs
+    image_urls = {}
 
     for persona in PERSONAS_DATA:
         image_file = persona["image_file"]
@@ -201,25 +209,35 @@ def copy_persona_images():
             print(f"[WARN] Image not found: {image_file}")
             continue
 
-        # Generate unique filename
-        ext = source.suffix
-        unique_name = f"{uuid.uuid4()}{ext}"
-        destination = backend_uploads / unique_name
+        try:
+            # Read file content
+            with open(source, 'rb') as f:
+                content = f.read()
 
-        # Copy file
-        shutil.copy2(source, destination)
+            content_type = get_content_type(image_file)
 
-        # Store relative path (for database) - just "persona_image/filename.jpg"
-        # This matches the format expected by the static files mount
-        relative_path = f"persona_image/{unique_name}"
-        image_paths[persona["name"]] = relative_path
+            # Upload to FileRunner
+            result = await filerunner_service.upload_file(
+                file_content=content,
+                filename=image_file,
+                content_type=content_type,
+                category="persona_image"
+            )
 
-        print(f"[OK] Copied: {image_file} -> {relative_path}")
+            # Get full URL
+            file_id = result.get('file_id')
+            file_url = filerunner_service.get_file_url(file_id)
 
-    return image_paths
+            image_urls[persona["name"]] = file_url
+            print(f"[OK] Uploaded: {image_file} -> {file_url}")
+
+        except Exception as e:
+            print(f"[ERROR] Failed to upload {image_file}: {str(e)}")
+
+    return image_urls
 
 
-def seed_personas(db, user, image_paths):
+def seed_personas(db, user, image_urls):
     """Create persona records in the database"""
     created_count = 0
 
@@ -236,8 +254,8 @@ def seed_personas(db, user, image_paths):
             print(f"[SKIP] Persona already exists: {persona_name}")
             continue
 
-        # Get image path
-        image_path = image_paths.get(persona_name)
+        # Get image URL from FileRunner
+        image_url = image_urls.get(persona_name)
 
         # Create persona
         persona = Persona(
@@ -245,7 +263,7 @@ def seed_personas(db, user, image_paths):
             name=persona_data["name"],
             description=persona_data["description"],
             bio=persona_data["bio"],
-            image_path=image_path,
+            image_path=image_url,  # Now stores FileRunner URL
             personality_traits=persona_data["personality_traits"],
             language_style=persona_data["language_style"],
             expertise=persona_data["expertise"],
@@ -266,11 +284,11 @@ def seed_personas(db, user, image_paths):
     return created_count
 
 
-def update_existing_persona_images(db, user, image_paths):
-    """Update existing personas with correct image paths"""
+def update_existing_persona_images(db, user, image_urls):
+    """Update existing personas with FileRunner URLs"""
     updated_count = 0
 
-    for persona_name, image_path in image_paths.items():
+    for persona_name, image_url in image_urls.items():
         # Find existing persona
         persona = db.query(Persona).filter(
             Persona.name == persona_name,
@@ -279,10 +297,10 @@ def update_existing_persona_images(db, user, image_paths):
 
         if persona:
             # Update image path if different
-            if persona.image_path != image_path:
-                persona.image_path = image_path
+            if persona.image_path != image_url:
+                persona.image_path = image_url
                 updated_count += 1
-                print(f"[UPDATE] Updated image path for: {persona_name}")
+                print(f"[UPDATE] Updated image URL for: {persona_name}")
 
     if updated_count > 0:
         db.commit()
@@ -290,10 +308,10 @@ def update_existing_persona_images(db, user, image_paths):
     return updated_count
 
 
-def main():
-    """Main seeding function"""
+async def main_async():
+    """Main seeding function (async)"""
     print("=" * 60)
-    print("AI Persona Database Seeding")
+    print("AI Persona Database Seeding (FileRunner)")
     print("=" * 60)
     print()
 
@@ -306,22 +324,22 @@ def main():
         user = get_or_create_seed_user(db)
         print()
 
-        # Step 2: Copy images
-        print("Step 2: Copying persona images...")
-        image_paths = copy_persona_images()
-        print(f"[OK] Copied {len(image_paths)} images")
+        # Step 2: Upload images to FileRunner
+        print("Step 2: Uploading persona images to FileRunner...")
+        image_urls = await upload_persona_images_to_filerunner()
+        print(f"[OK] Uploaded {len(image_urls)} images to FileRunner")
         print()
 
         # Step 3: Seed personas
         print("Step 3: Creating personas...")
-        created_count = seed_personas(db, user, image_paths)
+        created_count = seed_personas(db, user, image_urls)
         print(f"[OK] Created {created_count} new personas")
         print()
 
-        # Step 4: Update existing personas with correct image paths
-        print("Step 4: Updating existing persona image paths...")
-        updated_count = update_existing_persona_images(db, user, image_paths)
-        print(f"[OK] Updated {updated_count} persona image paths")
+        # Step 4: Update existing personas with FileRunner URLs
+        print("Step 4: Updating existing persona image URLs...")
+        updated_count = update_existing_persona_images(db, user, image_urls)
+        print(f"[OK] Updated {updated_count} persona image URLs")
         print()
 
         # Summary
@@ -330,9 +348,10 @@ def main():
         print("[SUCCESS] Seeding Complete!")
         print(f"   Total personas in database: {total_personas}")
         print(f"   New personas created: {created_count}")
-        print(f"   Image paths updated: {updated_count}")
+        print(f"   Image URLs updated: {updated_count}")
         print(f"   Seed user: {user.email}")
         print(f"   User ID: {user.id}")
+        print(f"   Storage: FileRunner")
         print("=" * 60)
 
     except Exception as e:
@@ -341,7 +360,14 @@ def main():
         traceback.print_exc()
         db.rollback()
     finally:
+        # Close FileRunner client
+        await filerunner_service.close()
         db.close()
+
+
+def main():
+    """Entry point - runs the async main function"""
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":
