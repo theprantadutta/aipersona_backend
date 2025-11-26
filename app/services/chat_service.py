@@ -130,6 +130,8 @@ class ChatService:
         Send a message in a chat session and get AI response
 
         Returns dict with 'user_message' and 'ai_message'
+
+        Special marker [GREETING] triggers an in-character greeting from the persona
         """
         # Verify session access
         session = self.get_session_by_id(session_id, user_id)
@@ -137,13 +139,22 @@ class ChatService:
         if not session:
             raise ValueError("Session not found or access denied")
 
-        # Create user message
+        # Check if this is a greeting request
+        is_greeting = message_text.strip() == "[GREETING]"
+
+        if is_greeting:
+            # For greetings, create a prompt asking the persona to introduce themselves
+            actual_message = "Please introduce yourself in character. Give a brief, engaging greeting that shows your personality."
+        else:
+            actual_message = message_text
+
+        # Create user message (hidden for greetings)
         user_message = ChatMessage(
             session_id=session_id,
             sender_id=user_id,
             sender_type="user",
-            text=message_text,
-            message_type="text",
+            text="[System: User opened chat]" if is_greeting else message_text,
+            message_type="system" if is_greeting else "text",
             tokens_used=0
         )
 
@@ -159,8 +170,8 @@ class ChatService:
         ai_result = await gemini_service.generate_response(
             user_id=user_id,
             persona_id=str(session.persona_id),
-            user_message=message_text,
-            conversation_history=conversation_history,
+            user_message=actual_message,
+            conversation_history=[] if is_greeting else conversation_history,  # No history for greeting
             temperature=temperature
         )
 
