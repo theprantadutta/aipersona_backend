@@ -1,4 +1,5 @@
 """Authentication service"""
+from uuid import UUID
 from sqlalchemy.orm import Session
 from app.models.user import User, UsageTracking
 from app.schemas.user import UserCreate
@@ -19,7 +20,11 @@ class AuthService:
 
     def get_user_by_id(self, user_id: str) -> Optional[User]:
         """Get user by ID"""
-        return self.db.query(User).filter(User.id == user_id).first()
+        try:
+            user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+            return self.db.query(User).filter(User.id == user_uuid).first()
+        except (ValueError, TypeError):
+            return None
 
     def create_user(self, user_data: UserCreate) -> User:
         """Create a new user with usage tracking"""
