@@ -15,81 +15,181 @@ logger = logging.getLogger(__name__)
 class SubscriptionService:
     """Service for managing Google Play subscriptions"""
 
-    # Subscription plans configuration
+    # Subscription tiers configuration
+    TIERS = {
+        "free": {
+            "name": "Free",
+            "description": "Get started with basic AI persona features",
+            "messages_per_day": 50,
+            "personas_limit": 2,
+            "storage_mb": 100,
+            "features": [
+                "50 messages per day",
+                "2 custom personas",
+                "Basic chat features",
+                "100MB storage",
+                "Text export only"
+            ]
+        },
+        "basic": {
+            "name": "Basic",
+            "description": "Enhanced features for regular users",
+            "messages_per_day": 500,
+            "personas_limit": 10,
+            "storage_mb": 1024,
+            "features": [
+                "500 messages per day",
+                "10 custom personas",
+                "1GB storage",
+                "Voice features",
+                "PDF export",
+                "Email support"
+            ]
+        },
+        "premium": {
+            "name": "Premium",
+            "description": "Advanced features for power users",
+            "messages_per_day": 2000,
+            "personas_limit": 50,
+            "storage_mb": 5120,
+            "features": [
+                "2,000 messages per day",
+                "50 custom personas",
+                "5GB storage",
+                "Premium voice packs",
+                "All export formats",
+                "Analytics dashboard",
+                "Priority support"
+            ]
+        },
+        "pro": {
+            "name": "Pro",
+            "description": "Professional tier with unlimited usage",
+            "messages_per_day": -1,  # Unlimited
+            "personas_limit": -1,  # Unlimited
+            "storage_mb": 20480,
+            "features": [
+                "Unlimited messages",
+                "Unlimited personas",
+                "20GB storage",
+                "Custom AI model training",
+                "Team collaboration (up to 5)",
+                "API access",
+                "White-label options",
+                "Dedicated support",
+                "Early access to new features"
+            ]
+        }
+    }
+
+    # Subscription plans configuration (tier + duration combinations)
     PLANS = {
-        "premium_daily": {
-            "id": "premium_daily",
-            "name": "Premium Daily",
-            "description": "Unlimited messages and personas for 24 hours",
+        # Basic Tier Plans
+        "basic_daily": {
+            "id": "basic_daily",
+            "tier": "basic",
+            "name": "Basic Daily Pass",
+            "description": "Basic features for 24 hours",
             "price": 0.99,
             "currency": "USD",
             "duration": "daily",
             "duration_days": 1,
-            "google_play_product_id": "com.aipersona.premium.daily",
-            "features": [
-                "Unlimited messages per day",
-                "Unlimited personas",
-                "Unlimited chat history",
-                "All premium features",
-                "Priority support"
-            ]
+            "google_play_product_id": "com.pranta.aipersona.basic.daily",
+            "ios_product_id": "basic_daily",
+            "features": TIERS["basic"]["features"]
+        },
+        "basic_monthly": {
+            "id": "basic_monthly",
+            "tier": "basic",
+            "name": "Basic Monthly",
+            "description": "Monthly access to Basic features",
+            "price": 4.99,
+            "currency": "USD",
+            "duration": "monthly",
+            "duration_days": 30,
+            "google_play_product_id": "com.pranta.aipersona.basic.monthly",
+            "ios_product_id": "basic_monthly",
+            "features": TIERS["basic"]["features"]
+        },
+        "basic_yearly": {
+            "id": "basic_yearly",
+            "tier": "basic",
+            "name": "Basic Yearly",
+            "description": "Save 17% with annual Basic subscription",
+            "price": 49.99,
+            "currency": "USD",
+            "duration": "yearly",
+            "duration_days": 365,
+            "google_play_product_id": "com.pranta.aipersona.basic.yearly",
+            "ios_product_id": "basic_yearly",
+            "features": TIERS["basic"]["features"]
+        },
+        # Premium Tier Plans
+        "premium_daily": {
+            "id": "premium_daily",
+            "tier": "premium",
+            "name": "Premium Daily Pass",
+            "description": "Full Premium access for 24 hours",
+            "price": 1.99,
+            "currency": "USD",
+            "duration": "daily",
+            "duration_days": 1,
+            "google_play_product_id": "com.pranta.aipersona.premium.daily",
+            "ios_product_id": "premium_daily",
+            "features": TIERS["premium"]["features"]
         },
         "premium_monthly": {
             "id": "premium_monthly",
+            "tier": "premium",
             "name": "Premium Monthly",
-            "description": "Unlimited access for 30 days",
+            "description": "Monthly Premium subscription",
             "price": 9.99,
             "currency": "USD",
             "duration": "monthly",
             "duration_days": 30,
-            "google_play_product_id": "com.aipersona.premium.monthly",
-            "features": [
-                "Unlimited messages per day",
-                "Unlimited personas",
-                "Unlimited chat history",
-                "All premium features",
-                "Priority support",
-                "Export chat history"
-            ]
+            "google_play_product_id": "com.pranta.aipersona.premium.monthly",
+            "ios_product_id": "premium_monthly",
+            "features": TIERS["premium"]["features"]
         },
         "premium_yearly": {
             "id": "premium_yearly",
+            "tier": "premium",
             "name": "Premium Yearly",
-            "description": "Best value - save 50%",
-            "price": 59.99,
+            "description": "Best value! Save 17% on Premium",
+            "price": 99.99,
             "currency": "USD",
             "duration": "yearly",
             "duration_days": 365,
-            "google_play_product_id": "com.aipersona.premium.yearly",
-            "features": [
-                "Unlimited messages per day",
-                "Unlimited personas",
-                "Unlimited chat history",
-                "All premium features",
-                "Priority support",
-                "Export chat history",
-                "Early access to new features"
-            ]
+            "google_play_product_id": "com.pranta.aipersona.premium.yearly",
+            "ios_product_id": "premium_yearly",
+            "features": TIERS["premium"]["features"]
         },
-        "lifetime": {
-            "id": "lifetime",
-            "name": "Lifetime Premium",
-            "description": "One-time payment, lifetime access",
-            "price": 149.99,
+        # Pro Tier Plans
+        "pro_monthly": {
+            "id": "pro_monthly",
+            "tier": "pro",
+            "name": "Pro Monthly",
+            "description": "Professional tier with unlimited usage",
+            "price": 19.99,
             "currency": "USD",
-            "duration": "lifetime",
-            "duration_days": None,
-            "google_play_product_id": "com.aipersona.premium.lifetime",
-            "features": [
-                "Unlimited messages per day",
-                "Unlimited personas",
-                "Unlimited chat history",
-                "All premium features",
-                "Priority support",
-                "Export chat history",
-                "Early access to new features",
-                "Lifetime updates"
-            ]
+            "duration": "monthly",
+            "duration_days": 30,
+            "google_play_product_id": "com.pranta.aipersona.pro.monthly",
+            "ios_product_id": "pro_monthly",
+            "features": TIERS["pro"]["features"]
+        },
+        "pro_yearly": {
+            "id": "pro_yearly",
+            "tier": "pro",
+            "name": "Pro Yearly",
+            "description": "Maximum savings on Pro tier",
+            "price": 199.99,
+            "currency": "USD",
+            "duration": "yearly",
+            "duration_days": 365,
+            "google_play_product_id": "com.pranta.aipersona.pro.yearly",
+            "ios_product_id": "pro_yearly",
+            "features": TIERS["pro"]["features"]
         }
     }
 
@@ -103,16 +203,30 @@ class SubscriptionService:
             plans.append(SubscriptionPlan(**plan_data))
         return plans
 
+    def get_all_tiers(self) -> Dict[str, Any]:
+        """Get all subscription tiers with feature limits"""
+        return self.TIERS
+
+    def get_tier_info(self, tier_name: str) -> Optional[Dict[str, Any]]:
+        """Get tier information by name"""
+        return self.TIERS.get(tier_name)
+
     def get_plan_by_id(self, plan_id: str) -> Optional[Dict[str, Any]]:
         """Get plan details by ID"""
         return self.PLANS.get(plan_id)
 
     def get_plan_by_product_id(self, product_id: str) -> Optional[Dict[str, Any]]:
-        """Get plan by Google Play product ID"""
+        """Get plan by Google Play or iOS product ID"""
         for plan in self.PLANS.values():
             if plan["google_play_product_id"] == product_id:
                 return plan
+            if plan.get("ios_product_id") == product_id:
+                return plan
         return None
+
+    def get_plans_by_tier(self, tier: str) -> List[Dict[str, Any]]:
+        """Get all plans for a specific tier"""
+        return [p for p in self.PLANS.values() if p.get("tier") == tier]
 
     async def verify_purchase(
         self,
@@ -191,12 +305,8 @@ class SubscriptionService:
                     raise ValueError(f"Purchase verification failed: {str(e)}")
 
             # Calculate expiration date
-            if plan["duration"] == "lifetime":
-                expires_at = None
-                subscription_tier = "lifetime"
-            else:
-                expires_at = datetime.utcnow() + timedelta(days=plan["duration_days"])
-                subscription_tier = plan["id"]
+            expires_at = datetime.utcnow() + timedelta(days=plan["duration_days"])
+            subscription_tier = plan.get("tier", "premium")  # Get the tier from the plan
 
             # Update user subscription
             user.subscription_tier = subscription_tier

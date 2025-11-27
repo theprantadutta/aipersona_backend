@@ -34,7 +34,7 @@ class User(Base):
 
     # Google Play Subscriptions (NO Stripe)
     subscription_tier = Column(String(50), default="free", nullable=False)
-    # free, premium_daily, premium_monthly, premium_yearly, lifetime
+    # Tiers: free, basic, premium, pro
     subscription_expires_at = Column(DateTime, nullable=True)
     grace_period_ends_at = Column(DateTime, nullable=True)
     google_play_purchase_token = Column(String(500), nullable=True)
@@ -48,9 +48,12 @@ class User(Base):
     uploaded_files = relationship("UploadedFile", back_populates="user", cascade="all, delete-orphan")
     marketplace_purchases = relationship("MarketplacePurchase", back_populates="buyer", cascade="all, delete-orphan")
 
+    # Valid paid subscription tiers
+    PAID_TIERS = ["basic", "premium", "pro"]
+
     @property
     def is_premium(self) -> bool:
-        """Check if user has active premium subscription or in grace period"""
+        """Check if user has any active paid subscription or in grace period"""
         # Check if in grace period first
         if self.is_in_grace_period():
             return True
@@ -58,12 +61,8 @@ class User(Base):
         if self.subscription_tier == "free":
             return False
 
-        # Lifetime subscriptions never expire
-        if self.subscription_tier == "lifetime":
-            return True
-
-        # For premium tiers, check expiration
-        if self.subscription_tier.startswith("premium_"):
+        # Check if user has a valid paid tier
+        if self.subscription_tier in self.PAID_TIERS:
             # If no expiration date set, treat as expired
             if self.subscription_expires_at is None:
                 return False
@@ -72,6 +71,21 @@ class User(Base):
 
         # Unknown tier, treat as not premium
         return False
+
+    @property
+    def is_basic_or_higher(self) -> bool:
+        """Check if user has Basic tier or higher"""
+        return self.is_premium and self.subscription_tier in ["basic", "premium", "pro"]
+
+    @property
+    def is_premium_or_higher(self) -> bool:
+        """Check if user has Premium tier or higher"""
+        return self.is_premium and self.subscription_tier in ["premium", "pro"]
+
+    @property
+    def is_pro(self) -> bool:
+        """Check if user has Pro tier"""
+        return self.is_premium and self.subscription_tier == "pro"
 
     def is_in_grace_period(self) -> bool:
         """Check if user is currently in grace period"""
@@ -94,9 +108,7 @@ class User(Base):
         if self.is_in_grace_period():
             return "grace_period"
         elif self.is_premium:
-            if self.subscription_tier == "lifetime":
-                return "active_lifetime"
-            return "active"
+            return f"active_{self.subscription_tier}"  # e.g., "active_premium"
         else:
             return "free"
 

@@ -7,13 +7,26 @@ from datetime import datetime
 class SubscriptionPlan(BaseModel):
     """Subscription plan details"""
     id: str
+    tier: str = "premium"  # "basic", "premium", "pro"
     name: str
     description: str
     price: float
     currency: str
-    duration: str  # "daily", "monthly", "yearly", "lifetime"
+    duration: str  # "daily", "monthly", "yearly"
+    duration_days: int = 30
     features: List[str]
     google_play_product_id: str
+    ios_product_id: Optional[str] = None
+
+
+class SubscriptionTier(BaseModel):
+    """Subscription tier details (feature limits)"""
+    name: str
+    description: str
+    messages_per_day: int
+    personas_limit: int
+    storage_mb: int
+    features: List[str]
 
 
 class SubscriptionPlansResponse(BaseModel):
