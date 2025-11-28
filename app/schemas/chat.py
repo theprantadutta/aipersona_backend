@@ -1,8 +1,9 @@
 """Schemas for Chat endpoints"""
 from pydantic import BaseModel, Field, field_serializer
 from typing import Optional, List, Any
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
+from enum import Enum
 
 
 class ChatSessionCreate(BaseModel):
@@ -91,3 +92,82 @@ class SendMessageResponse(BaseModel):
     """Response after sending a message"""
     user_message: ChatMessageResponse
     ai_message: ChatMessageResponse
+
+
+# ============================================================================
+# Activity History Schemas
+# ============================================================================
+
+class SessionSortField(str, Enum):
+    """Fields available for sorting sessions"""
+    last_message_at = "last_message_at"
+    created_at = "created_at"
+    message_count = "message_count"
+    persona_name = "persona_name"
+
+
+class SortOrder(str, Enum):
+    """Sort order options"""
+    asc = "asc"
+    desc = "desc"
+
+
+class ChatSessionUpdateRequest(BaseModel):
+    """Schema for updating a chat session"""
+    title: Optional[str] = Field(None, max_length=200, description="Custom session title")
+    is_pinned: Optional[bool] = Field(None, description="Pin status")
+    status: Optional[str] = Field(None, pattern="^(active|archived)$", description="Session status")
+
+
+class PersonaActivitySummary(BaseModel):
+    """Summary of activity with a specific persona"""
+    persona_id: str
+    persona_name: str
+    persona_image_url: Optional[str] = None
+    session_count: int
+    message_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class DailyActivityEntry(BaseModel):
+    """Activity for a single day"""
+    date: date
+    sessions_created: int
+    messages_sent: int
+
+
+class ChatStatisticsResponse(BaseModel):
+    """Response for chat activity statistics"""
+    total_sessions: int
+    total_messages: int
+    active_sessions: int
+    archived_sessions: int
+    pinned_sessions: int
+    unique_personas: int
+
+    # Most active persona
+    most_active_persona: Optional[PersonaActivitySummary] = None
+
+    # Weekly activity breakdown (last 7 days)
+    weekly_activity: List[DailyActivityEntry] = []
+
+    # Top personas by message count
+    personas_activity: List[PersonaActivitySummary] = []
+
+    # Averages
+    avg_messages_per_session: float = 0.0
+
+    # Time-based insights
+    most_active_day: Optional[str] = None  # e.g., "Monday"
+
+
+class ChatSessionSearchResponse(BaseModel):
+    """Response for session search"""
+    sessions: List[ChatSessionResponse]
+    total: int
+    page: int
+    page_size: int
+    query: Optional[str] = None
+    filters_applied: dict = {}

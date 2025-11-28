@@ -1,13 +1,14 @@
 """Chat service for managing chat sessions and messages"""
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_
+from sqlalchemy import desc, and_, func, case
 from app.models.chat import ChatSession, ChatMessage
 from app.models.persona import Persona
 from app.models.user import User
 from app.schemas.chat import ChatSessionCreate, ChatMessageCreate
 from app.services.gemini_service import GeminiService
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+from collections import defaultdict
 import json
 import logging
 
@@ -324,3 +325,302 @@ class ChatService:
         logger.info(f"Cleaned up {deleted_count} old free tier chat sessions")
 
         return deleted_count
+
+    # =========================================================================
+    # Activity History Methods
+    # =========================================================================
+
+    def search_sessions(
+        self,
+        user_id: str,
+        query: Optional[str] = None,
+        persona_id: Optional[str] = None,
+        status: Optional[str] = None,
+        is_pinned: Optional[bool] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        sort_by: str = "last_message_at",
+        sort_order: str = "desc",
+        skip: int = 0,
+        limit: int = 20
+    ) -> tuple[List[ChatSession], int, dict]:
+        """
+        Advanced search for chat sessions with filters
+
+        Returns:
+            Tuple of (sessions, total_count, filters_applied)
+        """
+        base_query = self.db.query(ChatSession).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted"  # Never show deleted sessions
+        )
+
+        filters_applied = {}
+
+        # Text search on persona_name
+        if query:
+            search_term = f"%{query}%"
+            base_query = base_query.filter(
+                ChatSession.persona_name.ilike(search_term)
+            )
+            filters_applied["query"] = query
+
+        # Persona filter
+        if persona_id:
+            base_query = base_query.filter(ChatSession.persona_id == persona_id)
+            filters_applied["persona_id"] = persona_id
+
+        # Status filter (active or archived, not deleted)
+        if status and status in ["active", "archived"]:
+            base_query = base_query.filter(ChatSession.status == status)
+            filters_applied["status"] = status
+
+        # Pinned filter
+        if is_pinned is not None:
+            base_query = base_query.filter(ChatSession.is_pinned == is_pinned)
+            filters_applied["is_pinned"] = is_pinned
+
+        # Date range filters
+        if start_date:
+            base_query = base_query.filter(
+                func.date(ChatSession.last_message_at) >= start_date
+            )
+            filters_applied["start_date"] = start_date.isoformat()
+
+        if end_date:
+            base_query = base_query.filter(
+                func.date(ChatSession.last_message_at) <= end_date
+            )
+            filters_applied["end_date"] = end_date.isoformat()
+
+        # Get total count before pagination
+        total = base_query.count()
+
+        # Sorting - pinned items always first
+        sort_column = getattr(ChatSession, sort_by, ChatSession.last_message_at)
+        if sort_order == "asc":
+            base_query = base_query.order_by(
+                desc(ChatSession.is_pinned),
+                sort_column.asc()
+            )
+        else:
+            base_query = base_query.order_by(
+                desc(ChatSession.is_pinned),
+                sort_column.desc()
+            )
+
+        # Apply pagination
+        sessions = base_query.offset(skip).limit(limit).all()
+
+        return sessions, total, filters_applied
+
+    def update_session(
+        self,
+        session_id: str,
+        user_id: str,
+        title: Optional[str] = None,
+        is_pinned: Optional[bool] = None,
+        status: Optional[str] = None
+    ) -> ChatSession:
+        """
+        Update a chat session's properties
+
+        Args:
+            session_id: Session ID
+            user_id: User ID (for access control)
+            title: Custom session title (stored in meta_data)
+            is_pinned: Pin status
+            status: Session status (active or archived)
+
+        Returns:
+            Updated ChatSession
+        """
+        session = self.get_session_by_id(session_id, user_id)
+
+        if not session:
+            raise ValueError("Session not found or access denied")
+
+        if title is not None:
+            # Store title in meta_data JSON field
+            meta = session.meta_data or {}
+            meta["title"] = title
+            session.meta_data = meta
+
+        if is_pinned is not None:
+            session.is_pinned = is_pinned
+
+        if status is not None and status in ["active", "archived"]:
+            session.status = status
+
+        session.updated_at = datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(session)
+
+        return session
+
+    def toggle_pin(self, session_id: str, user_id: str) -> ChatSession:
+        """Toggle the pin status of a session"""
+        session = self.get_session_by_id(session_id, user_id)
+
+        if not session:
+            raise ValueError("Session not found or access denied")
+
+        session.is_pinned = not session.is_pinned
+        session.updated_at = datetime.utcnow()
+
+        self.db.commit()
+        self.db.refresh(session)
+
+        return session
+
+    def get_statistics(self, user_id: str, days: int = 30) -> Dict[str, Any]:
+        """
+        Get comprehensive chat activity statistics for a user
+
+        Args:
+            user_id: User ID
+            days: Number of days to include in weekly activity (default 30, but we show last 7)
+
+        Returns:
+            Dict with statistics data
+        """
+        # Base query for user's sessions (excluding deleted)
+        base_query = self.db.query(ChatSession).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted"
+        )
+
+        # Count by status
+        status_counts = self.db.query(
+            ChatSession.status,
+            func.count(ChatSession.id).label("count")
+        ).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted"
+        ).group_by(ChatSession.status).all()
+
+        status_dict = {row.status: row.count for row in status_counts}
+        active_sessions = status_dict.get("active", 0)
+        archived_sessions = status_dict.get("archived", 0)
+        total_sessions = active_sessions + archived_sessions
+
+        # Pinned count
+        pinned_sessions = base_query.filter(ChatSession.is_pinned == True).count()
+
+        # Total messages
+        total_messages = self.db.query(func.sum(ChatSession.message_count)).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted"
+        ).scalar() or 0
+
+        # Unique personas
+        unique_personas = self.db.query(
+            func.count(func.distinct(ChatSession.persona_id))
+        ).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted"
+        ).scalar() or 0
+
+        # Average messages per session
+        avg_messages = (total_messages / total_sessions) if total_sessions > 0 else 0
+
+        # Most active personas (top 5)
+        persona_activity = self.db.query(
+            ChatSession.persona_id,
+            ChatSession.persona_name,
+            Persona.image_path,
+            func.count(ChatSession.id).label("session_count"),
+            func.sum(ChatSession.message_count).label("message_count")
+        ).outerjoin(
+            Persona, ChatSession.persona_id == Persona.id
+        ).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted"
+        ).group_by(
+            ChatSession.persona_id,
+            ChatSession.persona_name,
+            Persona.image_path
+        ).order_by(
+            desc("message_count")
+        ).limit(5).all()
+
+        personas_activity = [
+            {
+                "persona_id": str(row.persona_id),
+                "persona_name": row.persona_name,
+                "persona_image_url": row.image_path,
+                "session_count": row.session_count,
+                "message_count": row.message_count or 0
+            }
+            for row in persona_activity
+        ]
+
+        most_active_persona = personas_activity[0] if personas_activity else None
+
+        # Weekly activity (last 7 days)
+        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+
+        # Sessions per day
+        daily_sessions = self.db.query(
+            func.date(ChatSession.created_at).label("date"),
+            func.count(ChatSession.id).label("count")
+        ).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted",
+            ChatSession.created_at >= seven_days_ago
+        ).group_by(
+            func.date(ChatSession.created_at)
+        ).all()
+
+        daily_sessions_dict = {row.date: row.count for row in daily_sessions}
+
+        # Messages per day (from ChatMessage)
+        daily_messages = self.db.query(
+            func.date(ChatMessage.created_at).label("date"),
+            func.count(ChatMessage.id).label("count")
+        ).join(
+            ChatSession, ChatMessage.session_id == ChatSession.id
+        ).filter(
+            ChatSession.user_id == user_id,
+            ChatSession.status != "deleted",
+            ChatMessage.created_at >= seven_days_ago
+        ).group_by(
+            func.date(ChatMessage.created_at)
+        ).all()
+
+        daily_messages_dict = {row.date: row.count for row in daily_messages}
+
+        # Build weekly activity list
+        weekly_activity = []
+        for i in range(6, -1, -1):
+            day = (datetime.utcnow() - timedelta(days=i)).date()
+            weekly_activity.append({
+                "date": day.isoformat(),
+                "sessions_created": daily_sessions_dict.get(day, 0),
+                "messages_sent": daily_messages_dict.get(day, 0)
+            })
+
+        # Most active day of week
+        day_of_week_counts = defaultdict(int)
+        all_sessions = base_query.all()
+        for session in all_sessions:
+            day_name = session.last_message_at.strftime("%A")
+            day_of_week_counts[day_name] += session.message_count
+
+        most_active_day = None
+        if day_of_week_counts:
+            most_active_day = max(day_of_week_counts, key=day_of_week_counts.get)
+
+        return {
+            "total_sessions": total_sessions,
+            "total_messages": total_messages,
+            "active_sessions": active_sessions,
+            "archived_sessions": archived_sessions,
+            "pinned_sessions": pinned_sessions,
+            "unique_personas": unique_personas,
+            "most_active_persona": most_active_persona,
+            "weekly_activity": weekly_activity,
+            "personas_activity": personas_activity,
+            "avg_messages_per_session": round(avg_messages, 1),
+            "most_active_day": most_active_day
+        }

@@ -8,6 +8,7 @@ from app.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.user import User
 from app.services.chat_service import ChatService
+from datetime import date
 from app.schemas.chat import (
     ChatSessionCreate,
     ChatSessionResponse,
@@ -16,7 +17,14 @@ from app.schemas.chat import (
     ChatMessageResponse,
     SendMessageRequest,
     SendMessageResponse,
-    ChatExportRequest
+    ChatExportRequest,
+    ChatSessionUpdateRequest,
+    ChatStatisticsResponse,
+    ChatSessionSearchResponse,
+    SessionSortField,
+    SortOrder,
+    PersonaActivitySummary,
+    DailyActivityEntry
 )
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -313,4 +321,207 @@ async def export_chat_session(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error exporting chat session: {str(e)}"
+        )
+
+
+# ============================================================================
+# Activity History Endpoints
+# ============================================================================
+
+@router.get("/sessions/search", response_model=ChatSessionSearchResponse)
+def search_sessions(
+    q: Optional[str] = Query(None, description="Search query for persona name or messages"),
+    persona_id: Optional[str] = Query(None, description="Filter by persona ID"),
+    status: Optional[str] = Query(None, pattern="^(active|archived)$", description="Filter by status"),
+    is_pinned: Optional[bool] = Query(None, description="Filter by pinned status"),
+    start_date: Optional[date] = Query(None, description="Filter sessions from this date"),
+    end_date: Optional[date] = Query(None, description="Filter sessions until this date"),
+    sort_by: SessionSortField = Query(SessionSortField.last_message_at, description="Field to sort by"),
+    sort_order: SortOrder = Query(SortOrder.desc, description="Sort order"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Advanced search for chat sessions with filtering and sorting
+
+    - **q**: Search query (searches persona name and message content)
+    - **persona_id**: Filter by specific persona
+    - **status**: Filter by session status (active/archived)
+    - **is_pinned**: Filter pinned sessions only
+    - **start_date**: Filter sessions created after this date
+    - **end_date**: Filter sessions created before this date
+    - **sort_by**: Sort field (last_message_at, created_at, message_count, persona_name)
+    - **sort_order**: Sort direction (asc/desc)
+
+    Pinned sessions always appear first regardless of sort order
+    """
+    try:
+        skip = (page - 1) * page_size
+        service = ChatService(db)
+
+        sessions, total, filters_applied = service.search_sessions(
+            user_id=str(current_user.id),
+            query=q,
+            persona_id=persona_id,
+            status=status,
+            is_pinned=is_pinned,
+            start_date=start_date,
+            end_date=end_date,
+            sort_by=sort_by.value,
+            sort_order=sort_order.value,
+            skip=skip,
+            limit=page_size
+        )
+
+        return ChatSessionSearchResponse(
+            sessions=[ChatSessionResponse.model_validate(s) for s in sessions],
+            total=total,
+            page=page,
+            page_size=page_size,
+            query=q,
+            filters_applied=filters_applied
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error searching sessions: {str(e)}"
+        )
+
+
+@router.put("/sessions/{session_id}", response_model=ChatSessionResponse)
+def update_session(
+    session_id: str,
+    update_data: ChatSessionUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update a chat session's properties
+
+    - **session_id**: Session ID to update
+    - **title**: Custom title for the session
+    - **is_pinned**: Pin or unpin the session
+    - **status**: Change status (active/archived)
+
+    Only the session owner can update it
+    """
+    try:
+        service = ChatService(db)
+        session = service.update_session(
+            session_id=session_id,
+            user_id=str(current_user.id),
+            title=update_data.title,
+            is_pinned=update_data.is_pinned,
+            status=update_data.status
+        )
+
+        return ChatSessionResponse.model_validate(session)
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating session: {str(e)}"
+        )
+
+
+@router.post("/sessions/{session_id}/pin", response_model=ChatSessionResponse)
+def toggle_session_pin(
+    session_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Toggle pin status of a chat session
+
+    - **session_id**: Session ID to toggle pin
+
+    Returns the updated session with new pin status
+    """
+    try:
+        service = ChatService(db)
+        session = service.toggle_pin(
+            session_id=session_id,
+            user_id=str(current_user.id)
+        )
+
+        return ChatSessionResponse.model_validate(session)
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error toggling pin: {str(e)}"
+        )
+
+
+@router.get("/statistics", response_model=ChatStatisticsResponse)
+def get_chat_statistics(
+    days: int = Query(30, ge=7, le=365, description="Number of days to calculate stats for"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get chat activity statistics for the current user
+
+    - **days**: Number of days to include in statistics (default: 30)
+
+    Returns:
+    - Total sessions and messages
+    - Active, archived, and pinned session counts
+    - Most active persona with message count
+    - Weekly activity breakdown (last 7 days)
+    - Top personas by activity
+    - Average messages per session
+    - Most active day of the week
+    """
+    try:
+        service = ChatService(db)
+        stats = service.get_statistics(
+            user_id=str(current_user.id),
+            days=days
+        )
+
+        # Convert to response model
+        most_active = None
+        if stats.get("most_active_persona"):
+            most_active = PersonaActivitySummary(**stats["most_active_persona"])
+
+        weekly_activity = [
+            DailyActivityEntry(**entry) for entry in stats.get("weekly_activity", [])
+        ]
+
+        personas_activity = [
+            PersonaActivitySummary(**p) for p in stats.get("personas_activity", [])
+        ]
+
+        return ChatStatisticsResponse(
+            total_sessions=stats["total_sessions"],
+            total_messages=stats["total_messages"],
+            active_sessions=stats["active_sessions"],
+            archived_sessions=stats["archived_sessions"],
+            pinned_sessions=stats["pinned_sessions"],
+            unique_personas=stats["unique_personas"],
+            most_active_persona=most_active,
+            weekly_activity=weekly_activity,
+            personas_activity=personas_activity,
+            avg_messages_per_session=stats["avg_messages_per_session"],
+            most_active_day=stats.get("most_active_day")
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching statistics: {str(e)}"
         )
