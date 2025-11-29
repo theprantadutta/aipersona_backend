@@ -45,9 +45,12 @@ class ChatSessionResponse(BaseModel):
     user_id: Any
     persona_id: Any
     persona_name: str
+    persona_image_url: Optional[str] = None
+    title: Optional[str] = None
     status: str
     is_pinned: bool
     message_count: int
+    last_message: Optional[str] = None
     created_at: datetime
     last_message_at: datetime
     updated_at: datetime

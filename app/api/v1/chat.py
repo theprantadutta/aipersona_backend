@@ -30,6 +30,44 @@ from app.schemas.chat import (
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+def _enrich_session(session, db: Session) -> dict:
+    """Enrich session with persona image URL, last message, and title from metadata"""
+    session_dict = {
+        "id": session.id,
+        "user_id": session.user_id,
+        "persona_id": session.persona_id,
+        "persona_name": session.persona_name,
+        "persona_image_url": None,
+        "title": None,
+        "status": session.status,
+        "is_pinned": session.is_pinned,
+        "message_count": session.message_count,
+        "last_message": None,
+        "created_at": session.created_at,
+        "last_message_at": session.last_message_at,
+        "updated_at": session.updated_at,
+    }
+
+    # Get persona image URL
+    if session.persona:
+        session_dict["persona_image_url"] = session.persona.image_url
+
+    # Get title from metadata
+    if session.meta_data and isinstance(session.meta_data, dict):
+        session_dict["title"] = session.meta_data.get("title")
+
+    # Get last message text
+    from app.models.chat import ChatMessage
+    last_msg = db.query(ChatMessage).filter(
+        ChatMessage.session_id == session.id
+    ).order_by(ChatMessage.created_at.desc()).first()
+
+    if last_msg:
+        session_dict["last_message"] = last_msg.text[:200] if last_msg.text else None
+
+    return session_dict
+
+
 @router.get("/sessions", response_model=ChatSessionListResponse)
 def get_chat_sessions(
     status: Optional[str] = Query(None, pattern="^(active|archived|deleted)$"),
@@ -57,8 +95,10 @@ def get_chat_sessions(
             limit=page_size
         )
 
+        enriched_sessions = [_enrich_session(s, db) for s in sessions]
+
         return ChatSessionListResponse(
-            sessions=[ChatSessionResponse.model_validate(s) for s in sessions],
+            sessions=[ChatSessionResponse.model_validate(s) for s in enriched_sessions],
             total=total,
             page=page,
             page_size=page_size
@@ -102,6 +142,72 @@ def create_chat_session(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating chat session: {str(e)}"
+        )
+
+
+# NOTE: /sessions/search MUST come BEFORE /sessions/{session_id} to avoid route conflict
+@router.get("/sessions/search", response_model=ChatSessionSearchResponse)
+def search_sessions(
+    q: Optional[str] = Query(None, description="Search query for persona name or messages"),
+    persona_id: Optional[str] = Query(None, description="Filter by persona ID"),
+    search_status: Optional[str] = Query(None, alias="status", pattern="^(active|archived)$", description="Filter by status"),
+    is_pinned: Optional[bool] = Query(None, description="Filter by pinned status"),
+    start_date: Optional[date] = Query(None, description="Filter sessions from this date"),
+    end_date: Optional[date] = Query(None, description="Filter sessions until this date"),
+    sort_by: SessionSortField = Query(SessionSortField.last_message_at, description="Field to sort by"),
+    sort_order: SortOrder = Query(SortOrder.desc, description="Sort order"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Advanced search for chat sessions with filtering and sorting
+
+    - **q**: Search query (searches persona name and message content)
+    - **persona_id**: Filter by specific persona
+    - **status**: Filter by session status (active/archived)
+    - **is_pinned**: Filter pinned sessions only
+    - **start_date**: Filter sessions created after this date
+    - **end_date**: Filter sessions created before this date
+    - **sort_by**: Sort field (last_message_at, created_at, message_count, persona_name)
+    - **sort_order**: Sort direction (asc/desc)
+
+    Pinned sessions always appear first regardless of sort order
+    """
+    try:
+        skip = (page - 1) * page_size
+        service = ChatService(db)
+
+        sessions, total, filters_applied = service.search_sessions(
+            user_id=str(current_user.id),
+            query=q,
+            persona_id=persona_id,
+            status=search_status,
+            is_pinned=is_pinned,
+            start_date=start_date,
+            end_date=end_date,
+            sort_by=sort_by.value,
+            sort_order=sort_order.value,
+            skip=skip,
+            limit=page_size
+        )
+
+        enriched_sessions = [_enrich_session(s, db) for s in sessions]
+
+        return ChatSessionSearchResponse(
+            sessions=[ChatSessionResponse.model_validate(s) for s in enriched_sessions],
+            total=total,
+            page=page,
+            page_size=page_size,
+            query=q,
+            filters_applied=filters_applied
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error searching sessions: {str(e)}"
         )
 
 
@@ -321,73 +427,6 @@ async def export_chat_session(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error exporting chat session: {str(e)}"
-        )
-
-
-# ============================================================================
-# Activity History Endpoints
-# ============================================================================
-
-@router.get("/sessions/search", response_model=ChatSessionSearchResponse)
-def search_sessions(
-    q: Optional[str] = Query(None, description="Search query for persona name or messages"),
-    persona_id: Optional[str] = Query(None, description="Filter by persona ID"),
-    status: Optional[str] = Query(None, pattern="^(active|archived)$", description="Filter by status"),
-    is_pinned: Optional[bool] = Query(None, description="Filter by pinned status"),
-    start_date: Optional[date] = Query(None, description="Filter sessions from this date"),
-    end_date: Optional[date] = Query(None, description="Filter sessions until this date"),
-    sort_by: SessionSortField = Query(SessionSortField.last_message_at, description="Field to sort by"),
-    sort_order: SortOrder = Query(SortOrder.desc, description="Sort order"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Advanced search for chat sessions with filtering and sorting
-
-    - **q**: Search query (searches persona name and message content)
-    - **persona_id**: Filter by specific persona
-    - **status**: Filter by session status (active/archived)
-    - **is_pinned**: Filter pinned sessions only
-    - **start_date**: Filter sessions created after this date
-    - **end_date**: Filter sessions created before this date
-    - **sort_by**: Sort field (last_message_at, created_at, message_count, persona_name)
-    - **sort_order**: Sort direction (asc/desc)
-
-    Pinned sessions always appear first regardless of sort order
-    """
-    try:
-        skip = (page - 1) * page_size
-        service = ChatService(db)
-
-        sessions, total, filters_applied = service.search_sessions(
-            user_id=str(current_user.id),
-            query=q,
-            persona_id=persona_id,
-            status=status,
-            is_pinned=is_pinned,
-            start_date=start_date,
-            end_date=end_date,
-            sort_by=sort_by.value,
-            sort_order=sort_order.value,
-            skip=skip,
-            limit=page_size
-        )
-
-        return ChatSessionSearchResponse(
-            sessions=[ChatSessionResponse.model_validate(s) for s in sessions],
-            total=total,
-            page=page,
-            page_size=page_size,
-            query=q,
-            filters_applied=filters_applied
-        )
-
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error searching sessions: {str(e)}"
         )
 
 
