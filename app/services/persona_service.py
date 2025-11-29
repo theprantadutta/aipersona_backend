@@ -45,8 +45,11 @@ class PersonaService:
         skip: int = 0,
         limit: int = 50
     ) -> tuple[List[Persona], int]:
-        """Get all personas created by a user"""
-        query = self.db.query(Persona).options(joinedload(Persona.creator)).filter(Persona.creator_id == user_id)
+        """Get all personas created by a user (excludes deleted personas)"""
+        query = self.db.query(Persona).options(joinedload(Persona.creator)).filter(
+            Persona.creator_id == user_id,
+            Persona.status != "deleted"  # Always exclude deleted personas
+        )
 
         if status:
             query = query.filter(Persona.status == status)
