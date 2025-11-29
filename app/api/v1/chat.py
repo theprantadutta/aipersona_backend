@@ -48,9 +48,9 @@ def _enrich_session(session, db: Session) -> dict:
         "updated_at": session.updated_at,
     }
 
-    # Get persona image URL
+    # Get persona image URL (field is image_path in Persona model)
     if session.persona:
-        session_dict["persona_image_url"] = session.persona.image_url
+        session_dict["persona_image_url"] = session.persona.image_path
 
     # Get title from metadata
     if session.meta_data and isinstance(session.meta_data, dict):
