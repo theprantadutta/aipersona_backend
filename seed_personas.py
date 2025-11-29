@@ -198,12 +198,12 @@ def get_content_type(filename: str) -> str:
 
 async def upload_persona_images_to_filerunner():
     """Upload persona images to FileRunner and return URLs"""
-    # Path to frontend persona images
-    frontend_images = Path(__file__).parent.parent / "ai_persona" / "persona_images"
+    # Path to persona images (now in backend)
+    persona_images = Path(__file__).parent / "persona_images"
 
-    if not frontend_images.exists():
-        print(f"[WARN] Frontend persona_images folder not found at: {frontend_images}")
-        print("Please ensure the persona_images folder is in the correct location.")
+    if not persona_images.exists():
+        print(f"[WARN] persona_images folder not found at: {persona_images}")
+        print("Please ensure the persona_images folder is in the backend directory.")
         return {}
 
     # Upload images and track URLs
@@ -211,7 +211,7 @@ async def upload_persona_images_to_filerunner():
 
     for persona in PERSONAS_DATA:
         image_file = persona["image_file"]
-        source = frontend_images / image_file
+        source = persona_images / image_file
 
         if not source.exists():
             print(f"[WARN] Image not found: {image_file}")
