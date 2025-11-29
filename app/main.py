@@ -114,7 +114,7 @@ async def startup_event():
     # Ensure admin user exists
     try:
         from app.database import SessionLocal
-        from app.utils import ensure_admin_user
+        from app.utils.admin_setup import ensure_admin_user
 
         db = SessionLocal()
         ensure_admin_user(db)

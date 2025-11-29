@@ -7,10 +7,12 @@ from app.models.user import User
 from app.schemas.chat import ChatSessionCreate, ChatMessageCreate
 from app.services.gemini_service import GeminiService
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta, date
+from datetime import timedelta, date
 from collections import defaultdict
 import json
 import logging
+
+from app.utils.time_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +96,7 @@ class ChatService:
 
         # Soft delete
         session.status = "deleted"
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utc_now()
 
         self.db.commit()
 
@@ -197,8 +199,8 @@ class ChatService:
 
         # Update session
         session.message_count += 2  # User message + AI response
-        session.last_message_at = datetime.utcnow()
-        session.updated_at = datetime.utcnow()
+        session.last_message_at = utc_now()
+        session.updated_at = utc_now()
 
         self.db.commit()
         self.db.refresh(user_message)
@@ -245,7 +247,7 @@ class ChatService:
             "format": format,
             "session_id": str(session.id),
             "persona_name": session.persona_name,
-            "exported_at": datetime.utcnow().isoformat()
+            "exported_at": utc_now().isoformat()
         }
 
         if include_metadata:
@@ -302,7 +304,7 @@ class ChatService:
         Clean up old chat sessions for free tier users
         Called by background scheduler
         """
-        threshold = datetime.utcnow() - timedelta(days=days)
+        threshold = utc_now() - timedelta(days=days)
 
         # Get free tier users
         free_users = self.db.query(User).filter(User.subscription_tier == "free").all()
@@ -452,7 +454,7 @@ class ChatService:
         if status is not None and status in ["active", "archived"]:
             session.status = status
 
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utc_now()
         self.db.commit()
         self.db.refresh(session)
 
@@ -466,7 +468,7 @@ class ChatService:
             raise ValueError("Session not found or access denied")
 
         session.is_pinned = not session.is_pinned
-        session.updated_at = datetime.utcnow()
+        session.updated_at = utc_now()
 
         self.db.commit()
         self.db.refresh(session)
@@ -558,7 +560,7 @@ class ChatService:
         most_active_persona = personas_activity[0] if personas_activity else None
 
         # Weekly activity (last 7 days)
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
+        seven_days_ago = utc_now() - timedelta(days=7)
 
         # Sessions per day
         daily_sessions = self.db.query(
@@ -593,7 +595,7 @@ class ChatService:
         # Build weekly activity list
         weekly_activity = []
         for i in range(6, -1, -1):
-            day = (datetime.utcnow() - timedelta(days=i)).date()
+            day = (utc_now() - timedelta(days=i)).date()
             weekly_activity.append({
                 "date": day.isoformat(),
                 "sessions_created": daily_sessions_dict.get(day, 0),

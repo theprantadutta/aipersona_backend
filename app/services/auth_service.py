@@ -5,7 +5,8 @@ from app.models.user import User, UsageTracking
 from app.schemas.user import UserCreate
 from app.core.security import get_password_hash, verify_password, create_access_token
 from typing import Optional
-from datetime import datetime
+
+from app.utils.time_utils import utc_now
 
 
 class AuthService:
@@ -67,7 +68,7 @@ class AuthService:
             return None
 
         # Update last login
-        user.last_login = datetime.utcnow()
+        user.last_login = utc_now()
         self.db.commit()
 
         return user

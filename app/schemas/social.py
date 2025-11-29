@@ -3,13 +3,15 @@ from typing import Optional, List
 from datetime import datetime
 from pydantic import BaseModel, Field
 
+from app.utils.time_utils import utc_now
+
 
 class SocialInteraction(BaseModel):
     """Base social interaction"""
     user_id: str
     persona_id: Optional[str] = None
     target_user_id: Optional[str] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=utc_now)
 
 
 class LikeToggleResponse(BaseModel):

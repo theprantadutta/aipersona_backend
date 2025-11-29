@@ -2,9 +2,9 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
 import uuid
 from app.database import Base
+from app.utils.time_utils import utc_now
 
 
 class SubscriptionEvent(Base):
@@ -31,7 +31,7 @@ class SubscriptionEvent(Base):
     raw_response = Column(JSON, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False, index=True)
 
     # Relationships
     user = relationship("User", back_populates="subscription_events")

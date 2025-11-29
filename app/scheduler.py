@@ -1,7 +1,8 @@
 """Background scheduler for periodic tasks"""
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from datetime import datetime, timedelta
+from datetime import timedelta
 from app.config import settings
+from app.utils.time_utils import utc_now
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ async def cleanup_free_tier_history():
 
         db = SessionLocal()
 
-        cutoff_date = datetime.utcnow() - timedelta(days=settings.FREE_TIER_HISTORY_DAYS)
+        cutoff_date = utc_now() - timedelta(days=settings.FREE_TIER_HISTORY_DAYS)
 
         logger.info(f"🧹 Starting free tier history cleanup (older than {cutoff_date})")
 
@@ -87,7 +88,7 @@ async def reset_daily_counters():
         db.query(UsageTracking).update({
             "messages_today": 0,
             "gemini_api_calls_today": 0,
-            "messages_count_reset_at": datetime.utcnow()
+            "messages_count_reset_at": utc_now()
         })
 
         db.commit()
@@ -110,7 +111,7 @@ async def check_subscription_expirations():
         from app.models.user import User
 
         db = SessionLocal()
-        now = datetime.utcnow()
+        now = utc_now()
 
         logger.info("🔍 Checking subscription expirations")
 

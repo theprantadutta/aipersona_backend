@@ -2,10 +2,11 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Integer, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime, timedelta
+from datetime import timedelta
 import uuid
 from app.database import Base
 from app.config import settings
+from app.utils.time_utils import utc_now
 
 
 class User(Base):
@@ -27,7 +28,7 @@ class User(Base):
     email_verified = Column(Boolean, default=False, nullable=False)
 
     # Profile
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
@@ -67,7 +68,7 @@ class User(Base):
             if self.subscription_expires_at is None:
                 return False
             # Check if subscription hasn't expired
-            return datetime.utcnow() < self.subscription_expires_at
+            return utc_now() < self.subscription_expires_at
 
         # Unknown tier, treat as not premium
         return False
@@ -91,13 +92,13 @@ class User(Base):
         """Check if user is currently in grace period"""
         if self.grace_period_ends_at is None:
             return False
-        return datetime.utcnow() < self.grace_period_ends_at
+        return utc_now() < self.grace_period_ends_at
 
     def start_grace_period(self, days: int = None):
         """Start grace period for user"""
         if days is None:
             days = settings.GRACE_PERIOD_DAYS
-        self.grace_period_ends_at = datetime.utcnow() + timedelta(days=days)
+        self.grace_period_ends_at = utc_now() + timedelta(days=days)
 
     def clear_grace_period(self):
         """Clear grace period (e.g., when payment succeeds)"""
@@ -128,7 +129,7 @@ class UsageTracking(Base):
 
     # Message limits (free: 10/day, premium: unlimited)
     messages_today = Column(Integer, default=0, nullable=False)
-    messages_count_reset_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    messages_count_reset_at = Column(DateTime, default=utc_now, nullable=False)
 
     # Persona limits (free: 2, premium: unlimited)
     personas_count = Column(Integer, default=0, nullable=False)
@@ -141,8 +142,8 @@ class UsageTracking(Base):
     gemini_tokens_used_total = Column(Integer, default=0, nullable=False)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="usage_tracking")
@@ -152,7 +153,7 @@ class UsageTracking(Base):
         Check if daily counters should be reset and reset them if needed.
         Returns True if reset was performed.
         """
-        now = datetime.utcnow()
+        now = utc_now()
         last_reset = self.messages_count_reset_at
 
         # Check if we're in a new day

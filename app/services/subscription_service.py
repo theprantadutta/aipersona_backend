@@ -5,9 +5,11 @@ from app.models.subscription import SubscriptionEvent
 from app.schemas.subscription import VerifyPurchaseRequest, SubscriptionPlan
 from app.config import settings
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 import os
+
+from app.utils.time_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -260,8 +262,8 @@ class SubscriptionService:
                 # Development mode: Accept all purchases
                 verification_result = {
                     "kind": "androidpublisher#subscriptionPurchase",
-                    "startTimeMillis": str(int(datetime.utcnow().timestamp() * 1000)),
-                    "expiryTimeMillis": str(int((datetime.utcnow() + timedelta(days=plan["duration_days"])).timestamp() * 1000)),
+                    "startTimeMillis": str(int(utc_now().timestamp() * 1000)),
+                    "expiryTimeMillis": str(int((utc_now() + timedelta(days=plan["duration_days"])).timestamp() * 1000)),
                     "autoRenewing": True,
                     "priceCurrencyCode": "USD",
                     "paymentState": 1,  # Payment received
@@ -292,7 +294,7 @@ class SubscriptionService:
 
                     # Check if subscription is expired
                     expiry_time = int(verification_result.get('expiryTimeMillis', 0)) / 1000
-                    if expiry_time < datetime.utcnow().timestamp():
+                    if expiry_time < utc_now().timestamp():
                         raise ValueError("Subscription has expired")
 
                     logger.info(f"Successfully verified purchase with Google Play API")
@@ -305,7 +307,7 @@ class SubscriptionService:
                     raise ValueError(f"Purchase verification failed: {str(e)}")
 
             # Calculate expiration date
-            expires_at = datetime.utcnow() + timedelta(days=plan["duration_days"])
+            expires_at = utc_now() + timedelta(days=plan["duration_days"])
             subscription_tier = plan.get("tier", "premium")  # Get the tier from the plan
 
             # Update user subscription
@@ -412,7 +414,7 @@ class SubscriptionService:
         Background task to check and update expired subscriptions
         Called by scheduler
         """
-        now = datetime.utcnow()
+        now = utc_now()
 
         # Find users with expired subscriptions (not in grace period)
         expired_users = self.db.query(User).filter(

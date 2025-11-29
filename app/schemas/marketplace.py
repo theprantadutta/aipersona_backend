@@ -1,8 +1,10 @@
 """Marketplace schemas"""
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, validator, field_serializer
 from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
+
+from app.utils.time_utils import to_utc_isoformat
 
 
 class MarketplacePersonaBase(BaseModel):
@@ -40,6 +42,10 @@ class MarketplacePersonaResponse(MarketplacePersonaBase):
     average_rating: Optional[float] = None
     review_count: int = 0
 
+    @field_serializer('created_at', 'approved_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
+
     class Config:
         from_attributes = True
 
@@ -67,6 +73,10 @@ class PurchaseResponse(BaseModel):
     purchased_at: datetime
     message: str
 
+    @field_serializer('purchased_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
+
     class Config:
         from_attributes = True
 
@@ -93,6 +103,10 @@ class ReviewResponse(BaseModel):
     review_text: Optional[str]
     created_at: datetime
     updated_at: datetime
+
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
 
     class Config:
         from_attributes = True

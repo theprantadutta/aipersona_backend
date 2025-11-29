@@ -1,7 +1,9 @@
 """User schemas"""
-from pydantic import BaseModel, EmailStr, UUID4
+from pydantic import BaseModel, EmailStr, UUID4, field_serializer
 from datetime import datetime
 from typing import Optional
+
+from app.utils.time_utils import to_utc_isoformat
 
 
 class UserBase(BaseModel):
@@ -34,6 +36,10 @@ class UserResponse(UserBase):
     display_name: Optional[str] = None
     photo_url: Optional[str] = None
     email_verified: bool
+
+    @field_serializer('created_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
 
     class Config:
         from_attributes = True

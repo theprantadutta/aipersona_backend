@@ -5,6 +5,8 @@ from datetime import datetime, date
 from uuid import UUID
 from enum import Enum
 
+from app.utils.time_utils import to_utc_isoformat
+
 
 class ChatSessionCreate(BaseModel):
     """Schema for creating a chat session"""
@@ -34,6 +36,10 @@ class ChatMessageResponse(BaseModel):
         if isinstance(value, UUID):
             return str(value)
         return str(value) if value else ""
+
+    @field_serializer('created_at')
+    def serialize_datetime(self, value: datetime) -> Optional[str]:
+        return to_utc_isoformat(value)
 
     class Config:
         from_attributes = True
@@ -66,6 +72,10 @@ class ChatSessionResponse(BaseModel):
         if isinstance(value, UUID):
             return str(value)
         return str(value) if value else ""
+
+    @field_serializer('created_at', 'last_message_at', 'updated_at', 'persona_deleted_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
 
     class Config:
         from_attributes = True

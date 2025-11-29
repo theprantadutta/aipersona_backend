@@ -2,9 +2,9 @@
 from sqlalchemy import Column, String, Boolean, DateTime, Integer, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
 import uuid
 from app.database import Base
+from app.utils.time_utils import utc_now
 
 
 class ChatSession(Base):
@@ -32,9 +32,9 @@ class ChatSession(Base):
     meta_data = Column(JSON, nullable=True)  # Custom metadata (renamed to avoid SQLAlchemy conflict)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    last_message_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    last_message_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="chat_sessions")
@@ -68,7 +68,7 @@ class ChatMessage(Base):
     meta_data = Column(JSON, nullable=True)  # Additional data (renamed to avoid SQLAlchemy conflict)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False, index=True)
 
     # Relationships
     session = relationship("ChatSession", back_populates="messages")
@@ -95,7 +95,7 @@ class MessageAttachment(Base):
     attachment_type = Column(String(50), nullable=False)  # image, audio, document, voice
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
 
     # Relationships
     message = relationship("ChatMessage", back_populates="attachments")

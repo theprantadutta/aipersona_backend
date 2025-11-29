@@ -14,7 +14,7 @@ from app.services.auth_service import AuthService
 from app.core.dependencies import get_current_user
 from app.core.security import verify_password
 from app.models.user import User, UsageTracking
-from datetime import datetime
+from app.utils.time_utils import utc_now
 import logging
 
 router = APIRouter()
@@ -58,7 +58,7 @@ async def authenticate_with_firebase(
         if user:
             # Existing Firebase user - update last login
             logger.info(f"✅ [Firebase Auth] Found existing user: {user.email}")
-            user.last_login = datetime.utcnow()
+            user.last_login = utc_now()
             db.commit()
             db.refresh(user)
         else:
@@ -249,7 +249,7 @@ async def link_google_account(
         user.display_name = user_info.get('display_name') or user.display_name
         user.photo_url = user_info.get('photo_url') or user.photo_url
         user.email_verified = user_info['email_verified']
-        user.last_login = datetime.utcnow()
+        user.last_login = utc_now()
 
         # Update auth provider to indicate both methods available
         if user.auth_provider == 'email':

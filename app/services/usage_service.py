@@ -8,6 +8,8 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta, date
 import logging
 
+from app.utils.time_utils import utc_now
+
 logger = logging.getLogger(__name__)
 
 
@@ -212,7 +214,7 @@ class UsageService:
 
         export_data = {
             "user_id": user_id,
-            "export_date": datetime.utcnow().isoformat(),
+            "export_date": utc_now().isoformat(),
             "period": {
                 "start": start_date.isoformat(),
                 "end": end_date.isoformat()
@@ -243,7 +245,7 @@ class UsageService:
         Background task to reset daily counters
         Called by scheduler
         """
-        now = datetime.utcnow()
+        now = utc_now()
 
         # Get all usage tracking records
         all_usage = self.db.query(UsageTracking).all()

@@ -2,8 +2,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_, desc
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime
 import logging
+
+from app.utils.time_utils import utc_now
 
 from app.models.marketplace import MarketplacePersona, MarketplacePurchase, MarketplaceReview
 from app.models.persona import Persona
@@ -64,7 +65,7 @@ class MarketplaceService:
         )
 
         if listing.status == "approved":
-            listing.approved_at = datetime.utcnow()
+            listing.approved_at = utc_now()
 
         self.db.add(listing)
         self.db.commit()
@@ -330,7 +331,7 @@ class MarketplaceService:
             # Update existing review
             existing_review.rating = review_data.rating
             existing_review.review_text = review_data.review_text
-            existing_review.updated_at = datetime.utcnow()
+            existing_review.updated_at = utc_now()
             self.db.commit()
             self.db.refresh(existing_review)
             return existing_review

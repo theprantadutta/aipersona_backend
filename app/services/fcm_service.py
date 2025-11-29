@@ -1,9 +1,11 @@
 """Firebase Cloud Messaging service"""
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import timedelta
 import logging
 import os
+
+from app.utils.time_utils import utc_now
 
 from app.models.user import User
 from app.models.notification import FCMToken
@@ -73,7 +75,7 @@ class FCMService:
             existing_token.device_id = token_data.device_id
             existing_token.platform = token_data.platform
             existing_token.is_active = True
-            existing_token.last_used_at = datetime.utcnow()
+            existing_token.last_used_at = utc_now()
             self.db.commit()
             self.db.refresh(existing_token)
 
@@ -91,7 +93,7 @@ class FCMService:
             device_token.fcm_token = token_data.fcm_token
             device_token.platform = token_data.platform
             device_token.is_active = True
-            device_token.last_used_at = datetime.utcnow()
+            device_token.last_used_at = utc_now()
             self.db.commit()
             self.db.refresh(device_token)
 
@@ -242,7 +244,7 @@ class FCMService:
 
                 # Update token last_used_at
                 for token in tokens:
-                    token.last_used_at = datetime.utcnow()
+                    token.last_used_at = utc_now()
                 self.db.commit()
 
                 logger.info(f"Sent notification to {response.success_count}/{len(token_strings)} devices")
@@ -274,7 +276,7 @@ class FCMService:
         Returns:
             Number of tokens removed
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = utc_now() - timedelta(days=days)
 
         inactive_tokens = self.db.query(FCMToken).filter(
             FCMToken.last_used_at < cutoff_date

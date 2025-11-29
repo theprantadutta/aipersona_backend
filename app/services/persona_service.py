@@ -7,9 +7,11 @@ from app.models.chat import ChatSession
 from app.schemas.persona import PersonaCreate, PersonaUpdate, KnowledgeBaseCreate
 from app.config import settings
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timedelta
+from datetime import timedelta
 import uuid
 import logging
+
+from app.utils.time_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +148,7 @@ class PersonaService:
         for field, value in update_data.items():
             setattr(persona, field, value)
 
-        persona.updated_at = datetime.utcnow()
+        persona.updated_at = utc_now()
 
         self.db.commit()
         self.db.refresh(persona)
@@ -165,7 +167,7 @@ class PersonaService:
 
         # Cache persona info to all chat sessions before deletion
         # This allows users to still see persona name/image and clone it
-        deletion_time = datetime.utcnow()
+        deletion_time = utc_now()
         sessions = self.db.query(ChatSession).filter(
             ChatSession.persona_id == persona_id
         ).all()
@@ -295,7 +297,7 @@ class PersonaService:
     ) -> List[Persona]:
         """Get trending personas based on conversation count"""
         # Calculate date threshold
-        now = datetime.utcnow()
+        now = utc_now()
         if timeframe == "day":
             threshold = now - timedelta(days=1)
         elif timeframe == "week":
@@ -345,7 +347,7 @@ class PersonaService:
             tokens=tokens,
             status="active",
             meta_data=kb_data.meta_data,
-            indexed_at=datetime.utcnow()
+            indexed_at=utc_now()
         )
 
         self.db.add(kb)

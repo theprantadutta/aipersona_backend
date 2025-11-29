@@ -2,9 +2,9 @@
 from sqlalchemy import Column, String, Numeric, Integer, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
 import uuid
 from app.database import Base
+from app.utils.time_utils import utc_now
 
 
 class MarketplacePersona(Base):
@@ -33,8 +33,8 @@ class MarketplacePersona(Base):
     purchases = Column(Integer, default=0, nullable=False)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
     approved_at = Column(DateTime, nullable=True)
 
     # Relationships
@@ -60,7 +60,7 @@ class MarketplacePurchase(Base):
     status = Column(String(50), default="completed", nullable=False)  # completed, refunded
 
     # Timestamps
-    purchased_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    purchased_at = Column(DateTime, default=utc_now, nullable=False)
 
     # Relationships
     buyer = relationship("User", back_populates="marketplace_purchases")
@@ -84,8 +84,8 @@ class MarketplaceReview(Base):
     review_text = Column(Text, nullable=True)
 
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     marketplace_persona = relationship("MarketplacePersona", back_populates="reviews")

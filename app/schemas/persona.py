@@ -1,8 +1,10 @@
 """Schemas for Persona endpoints"""
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, field_serializer
 from typing import Optional, List
 from datetime import datetime
 import uuid
+
+from app.utils.time_utils import to_utc_isoformat
 
 
 class PersonaBase(BaseModel):
@@ -68,6 +70,10 @@ class PersonaResponse(PersonaBase):
             return str(v)
         return v
 
+    @field_serializer('created_at', 'updated_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
+
     class Config:
         from_attributes = True
 
@@ -114,6 +120,10 @@ class KnowledgeBaseResponse(BaseModel):
         if isinstance(v, uuid.UUID):
             return str(v)
         return v
+
+    @field_serializer('indexed_at', 'created_at', 'updated_at')
+    def serialize_datetime(self, value: Optional[datetime]) -> Optional[str]:
+        return to_utc_isoformat(value)
 
     class Config:
         from_attributes = True

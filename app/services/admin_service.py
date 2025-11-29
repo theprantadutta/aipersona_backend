@@ -2,9 +2,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, and_, or_
 from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 import logging
+
+from app.utils.time_utils import utc_now
 
 from app.models.user import User, UsageTracking
 from app.models.persona import Persona
@@ -116,7 +118,7 @@ class AdminService:
         Returns:
             Dictionary with analytics data
         """
-        now = datetime.utcnow()
+        now = utc_now()
         week_ago = now - timedelta(days=7)
         month_ago = now - timedelta(days=30)
         today_start = datetime(now.year, now.month, now.day)
@@ -352,7 +354,7 @@ class AdminService:
 
             if action == "approve":
                 listing.status = "approved"
-                listing.approved_at = datetime.utcnow()
+                listing.approved_at = utc_now()
             elif action == "reject":
                 listing.status = "rejected"
             elif action == "delete":
