@@ -58,6 +58,7 @@ class PersonaResponse(PersonaBase):
     original_creator_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    is_owner: bool = False  # Whether current user is the creator
 
     @field_validator('id', 'creator_id', 'cloned_from_persona_id', 'original_creator_id', mode='before')
     @classmethod

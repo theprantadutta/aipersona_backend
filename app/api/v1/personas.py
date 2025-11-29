@@ -2,9 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
+from uuid import UUID
 
 from app.database import get_db
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_optional_current_user
 from app.models.user import User
 from app.models.persona import Persona
 from app.services.persona_service import PersonaService
@@ -20,6 +21,14 @@ from app.schemas.persona import (
 )
 
 router = APIRouter(prefix="/personas", tags=["personas"])
+
+
+def persona_to_response(persona: Persona, current_user_id: Optional[UUID] = None) -> PersonaResponse:
+    """Convert Persona model to PersonaResponse with is_owner flag"""
+    response = PersonaResponse.model_validate(persona)
+    if current_user_id is not None:
+        response.is_owner = str(persona.creator_id) == str(current_user_id)
+    return response
 
 
 @router.get("", response_model=PersonaListResponse)
@@ -48,7 +57,7 @@ def get_user_personas(
         )
 
         return PersonaListResponse(
-            personas=[PersonaResponse.model_validate(p) for p in personas],
+            personas=[persona_to_response(p, current_user.id) for p in personas],
             total=total,
             page=page,
             page_size=page_size
@@ -89,7 +98,7 @@ def create_persona(
             persona_data=persona_data
         )
 
-        return PersonaResponse.model_validate(persona)
+        return persona_to_response(persona, current_user.id)
 
     except ValueError as e:
         # User-facing errors (limits, validation)
@@ -108,6 +117,7 @@ def create_persona(
 def get_trending_personas(
     timeframe: str = Query("week", pattern="^(day|week|month)$"),
     limit: int = Query(20, ge=1, le=50),
+    current_user: User | None = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -119,9 +129,10 @@ def get_trending_personas(
     try:
         service = PersonaService(db)
         personas = service.get_trending_personas(timeframe=timeframe, limit=limit)
+        user_id = current_user.id if current_user else None
 
         return TrendingPersonasResponse(
-            personas=[PersonaResponse.model_validate(p) for p in personas],
+            personas=[persona_to_response(p, user_id) for p in personas],
             timeframe=timeframe
         )
 
@@ -136,6 +147,7 @@ def get_trending_personas(
 def get_public_personas(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
+    current_user: User | None = Depends(get_optional_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -154,9 +166,10 @@ def get_public_personas(
         )
         total = query.count()
         personas = query.order_by(Persona.created_at.desc()).offset(skip).limit(page_size).all()
+        user_id = current_user.id if current_user else None
 
         return PersonaListResponse(
-            personas=[PersonaResponse.model_validate(p) for p in personas],
+            personas=[persona_to_response(p, user_id) for p in personas],
             total=total,
             page=page,
             page_size=page_size
@@ -195,7 +208,7 @@ def search_personas(
         )
 
         return PersonaListResponse(
-            personas=[PersonaResponse.model_validate(p) for p in personas],
+            personas=[persona_to_response(p, current_user.id) for p in personas],
             total=total,
             page=page,
             page_size=page_size
@@ -229,7 +242,7 @@ def get_persona(
                 detail="Persona not found or access denied"
             )
 
-        return PersonaResponse.model_validate(persona)
+        return persona_to_response(persona, current_user.id)
 
     except HTTPException:
         raise
@@ -261,7 +274,7 @@ def update_persona(
             persona_data=persona_data
         )
 
-        return PersonaResponse.model_validate(persona)
+        return persona_to_response(persona, current_user.id)
 
     except ValueError as e:
         raise HTTPException(
@@ -333,7 +346,7 @@ def clone_persona(
             db.commit()
             db.refresh(persona)
 
-        return PersonaResponse.model_validate(persona)
+        return persona_to_response(persona, current_user.id)
 
     except ValueError as e:
         raise HTTPException(

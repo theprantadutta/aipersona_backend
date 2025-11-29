@@ -120,3 +120,40 @@ async def get_admin_user(
             detail="Admin access required"
         )
     return current_user
+
+
+# Optional security for endpoints that can work with or without auth
+optional_security = HTTPBearer(auto_error=False)
+
+
+async def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(optional_security),
+    db: Session = Depends(get_db)
+) -> User | None:
+    """
+    Get current authenticated user if token provided, otherwise return None.
+    Used for endpoints that work for both authenticated and anonymous users.
+    """
+    if credentials is None:
+        return None
+
+    token = credentials.credentials
+
+    # Decode token
+    payload = decode_access_token(token)
+    if payload is None:
+        return None
+
+    # Extract user ID from token
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        return None
+
+    # Get user from database
+    try:
+        user_uuid = PyUUID(user_id)
+    except (ValueError, TypeError):
+        return None
+
+    user = db.query(User).filter(User.id == user_uuid).first()
+    return user
