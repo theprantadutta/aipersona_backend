@@ -208,6 +208,7 @@ class PersonaService:
             tags=original.tags,
             voice_id=original.voice_id,
             voice_settings=original.voice_settings,
+            image_path=original.image_path,  # Copy the original image
             is_public=False,  # Cloned personas start as private
             is_marketplace=False,
             status="active",
