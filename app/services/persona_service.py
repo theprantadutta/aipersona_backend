@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, and_, desc
 from app.models.persona import Persona, KnowledgeBase
 from app.models.user import User, UsageTracking
+from app.models.chat import ChatSession
 from app.schemas.persona import PersonaCreate, PersonaUpdate, KnowledgeBaseCreate
 from app.config import settings
 from typing import List, Optional, Dict, Any
@@ -159,9 +160,21 @@ class PersonaService:
         if not persona:
             raise ValueError("Persona not found or access denied")
 
-        # Soft delete
+        # Cache persona info to all chat sessions before deletion
+        # This allows users to still see persona name/image and clone it
+        deletion_time = datetime.utcnow()
+        sessions = self.db.query(ChatSession).filter(
+            ChatSession.persona_id == persona_id
+        ).all()
+
+        for session in sessions:
+            session.deleted_persona_name = persona.name
+            session.deleted_persona_image = persona.image_path
+            session.persona_deleted_at = deletion_time
+
+        # Soft delete the persona
         persona.status = "deleted"
-        persona.updated_at = datetime.utcnow()
+        persona.updated_at = deletion_time
 
         # Update usage count
         usage = self.db.query(UsageTracking).filter(UsageTracking.user_id == user_id).first()
@@ -179,8 +192,33 @@ class PersonaService:
         new_name: Optional[str] = None
     ) -> Persona:
         """Clone a persona"""
-        # Get original persona
+        # Get original persona - first try normal access
         original = self.get_persona_by_id(persona_id, user_id)
+
+        # If not found via normal access, check if it's a deleted persona
+        # that the user had a session with (allows "Clone & Revive")
+        if not original:
+            # Get persona regardless of access
+            original = self.db.query(Persona).options(
+                joinedload(Persona.creator)
+            ).filter(Persona.id == persona_id).first()
+
+            if original and original.status == "deleted":
+                # Check if user had a session with this persona
+                user_had_session = self.db.query(ChatSession).filter(
+                    ChatSession.user_id == user_id,
+                    or_(
+                        ChatSession.persona_id == persona_id,
+                        and_(
+                            ChatSession.persona_id.is_(None),
+                            ChatSession.persona_deleted_at.isnot(None)
+                        )
+                    )
+                ).first()
+
+                if not user_had_session:
+                    original = None  # User cannot clone this deleted persona
+
         if not original:
             raise ValueError("Persona not found or not accessible")
 

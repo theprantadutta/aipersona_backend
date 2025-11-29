@@ -31,7 +31,12 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 def _enrich_session(session, db: Session) -> dict:
-    """Enrich session with persona image URL, last message, and title from metadata"""
+    """Enrich session with persona image URL, last message, title, and deleted persona info"""
+    # Check if persona is deleted
+    is_persona_deleted = session.persona_deleted_at is not None or (
+        session.persona and session.persona.status == "deleted"
+    )
+
     session_dict = {
         "id": session.id,
         "user_id": session.user_id,
@@ -46,11 +51,19 @@ def _enrich_session(session, db: Session) -> dict:
         "created_at": session.created_at,
         "last_message_at": session.last_message_at,
         "updated_at": session.updated_at,
+        # Deleted persona tracking
+        "is_persona_deleted": is_persona_deleted,
+        "deleted_persona_name": session.deleted_persona_name,
+        "deleted_persona_image": session.deleted_persona_image,
+        "persona_deleted_at": session.persona_deleted_at,
     }
 
     # Get persona image URL (field is image_path in Persona model)
-    if session.persona:
+    # Use cached deleted_persona_image if persona was deleted
+    if session.persona and not is_persona_deleted:
         session_dict["persona_image_url"] = session.persona.image_path
+    elif session.deleted_persona_image:
+        session_dict["persona_image_url"] = session.deleted_persona_image
 
     # Get title from metadata
     if session.meta_data and isinstance(session.meta_data, dict):

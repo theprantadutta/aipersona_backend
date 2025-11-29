@@ -14,9 +14,14 @@ class ChatSession(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    persona_id = Column(UUID(as_uuid=True), ForeignKey("personas.id", ondelete="CASCADE"), nullable=False, index=True)
+    persona_id = Column(UUID(as_uuid=True), ForeignKey("personas.id", ondelete="SET NULL"), nullable=True, index=True)
 
     persona_name = Column(String(255), nullable=False)  # Cached for convenience
+
+    # Deleted persona tracking - populated when persona is deleted
+    deleted_persona_name = Column(String(255), nullable=True)  # Cached name when persona deleted
+    deleted_persona_image = Column(String(500), nullable=True)  # Cached image path when deleted
+    persona_deleted_at = Column(DateTime, nullable=True)  # When the persona was deleted
 
     # Status
     status = Column(String(50), default="active", nullable=False)  # active, archived, deleted

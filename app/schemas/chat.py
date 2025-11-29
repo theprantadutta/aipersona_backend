@@ -55,6 +55,12 @@ class ChatSessionResponse(BaseModel):
     last_message_at: datetime
     updated_at: datetime
 
+    # Deleted persona tracking
+    is_persona_deleted: bool = False
+    deleted_persona_name: Optional[str] = None
+    deleted_persona_image: Optional[str] = None
+    persona_deleted_at: Optional[datetime] = None
+
     @field_serializer('id', 'user_id', 'persona_id')
     def serialize_uuid(self, value: Any) -> str:
         if isinstance(value, UUID):
