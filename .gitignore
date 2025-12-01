@@ -90,3 +90,6 @@ celerybeat.pid
 
 # OS
 Thumbs.db
+
+# Persona images (downloaded from Wikipedia, stored in FileRunner)
+persona_images/

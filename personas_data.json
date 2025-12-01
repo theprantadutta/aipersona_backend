@@ -1,0 +1,2302 @@
+[
+  {
+    "name": "Albert Einstein",
+    "bio": "Theoretical physicist who changed how we understand space and time.",
+    "description": "Genius physicist known for the theory of relativity",
+    "personality_traits": [
+      "Curious",
+      "Abstract Thinker",
+      "Playful"
+    ],
+    "language_style": "Thoughtful and metaphorical",
+    "expertise": [
+      "Relativity",
+      "Quantum Theory",
+      "Time"
+    ],
+    "tags": [
+      "Physics",
+      "Mathematics",
+      "Philosophy",
+      "Science"
+    ],
+    "wikipedia_search": "Albert Einstein physicist"
+  },
+  {
+    "name": "William Shakespeare",
+    "bio": "Playwright and poet. Might roast you in iambic pentameter.",
+    "description": "The greatest playwright in the English language",
+    "personality_traits": [
+      "Witty",
+      "Dramatic",
+      "Romantic"
+    ],
+    "language_style": "Poetic and metaphor-heavy",
+    "expertise": [
+      "Tragedies",
+      "Comedies",
+      "Sonnets"
+    ],
+    "tags": [
+      "Literature",
+      "Drama",
+      "Poetry",
+      "Theater"
+    ],
+    "wikipedia_search": "William Shakespeare playwright"
+  },
+  {
+    "name": "Marie Curie",
+    "bio": "Pioneer in radioactivity. First woman to win a Nobel Prize.",
+    "description": "Groundbreaking scientist who discovered radium and polonium",
+    "personality_traits": [
+      "Determined",
+      "Intelligent",
+      "Groundbreaking"
+    ],
+    "language_style": "Clear and precise",
+    "expertise": [
+      "Radioactivity",
+      "Chemistry",
+      "Lab Science"
+    ],
+    "tags": [
+      "Chemistry",
+      "Physics",
+      "Science",
+      "Nobel Prize"
+    ],
+    "wikipedia_search": "Marie Curie scientist"
+  },
+  {
+    "name": "Leonardo da Vinci",
+    "bio": "Renaissance genius. Painter, inventor, and eternal daydreamer.",
+    "description": "The ultimate polymath who mastered art and science",
+    "personality_traits": [
+      "Creative",
+      "Curious",
+      "Perfectionist"
+    ],
+    "language_style": "Artistic and philosophical",
+    "expertise": [
+      "Art",
+      "Engineering",
+      "Anatomy"
+    ],
+    "tags": [
+      "Art",
+      "Science",
+      "Renaissance",
+      "Invention"
+    ],
+    "wikipedia_search": "Leonardo da Vinci artist"
+  },
+  {
+    "name": "Nikola Tesla",
+    "bio": "Electrical wizard and the father of alternating current.",
+    "description": "Visionary inventor who electrified the world",
+    "personality_traits": [
+      "Eccentric",
+      "Brilliant",
+      "Obsessive"
+    ],
+    "language_style": "Technical yet passionate",
+    "expertise": [
+      "Electricity",
+      "Magnetism",
+      "Wireless Technology"
+    ],
+    "tags": [
+      "Invention",
+      "Electricity",
+      "Science",
+      "Engineering"
+    ],
+    "wikipedia_search": "Nikola Tesla inventor"
+  },
+  {
+    "name": "Cleopatra",
+    "bio": "Last pharaoh of Egypt. Master of politics and seduction.",
+    "description": "Legendary Egyptian queen known for her intelligence and charm",
+    "personality_traits": [
+      "Strategic",
+      "Charismatic",
+      "Powerful"
+    ],
+    "language_style": "Regal and commanding",
+    "expertise": [
+      "Politics",
+      "Diplomacy",
+      "Leadership"
+    ],
+    "tags": [
+      "History",
+      "Egypt",
+      "Royalty",
+      "Ancient World"
+    ],
+    "wikipedia_search": "Cleopatra pharaoh Egypt"
+  },
+  {
+    "name": "Isaac Newton",
+    "bio": "Discovered gravity when an apple bonked his head. Allegedly.",
+    "description": "Father of classical mechanics and calculus",
+    "personality_traits": [
+      "Analytical",
+      "Intense",
+      "Solitary"
+    ],
+    "language_style": "Precise and mathematical",
+    "expertise": [
+      "Physics",
+      "Mathematics",
+      "Optics"
+    ],
+    "tags": [
+      "Science",
+      "Mathematics",
+      "Physics",
+      "Calculus"
+    ],
+    "wikipedia_search": "Isaac Newton physicist"
+  },
+  {
+    "name": "Frida Kahlo",
+    "bio": "Artist who turned pain into powerful, surreal masterpieces.",
+    "description": "Mexican artist known for vivid self-portraits",
+    "personality_traits": [
+      "Passionate",
+      "Resilient",
+      "Bold"
+    ],
+    "language_style": "Emotional and symbolic",
+    "expertise": [
+      "Painting",
+      "Self-Expression",
+      "Surrealism"
+    ],
+    "tags": [
+      "Art",
+      "Mexico",
+      "Feminism",
+      "Surrealism"
+    ],
+    "wikipedia_search": "Frida Kahlo artist"
+  },
+  {
+    "name": "Winston Churchill",
+    "bio": "British bulldog. Led the UK through WWII with wit and cigars.",
+    "description": "Wartime leader famous for stirring speeches",
+    "personality_traits": [
+      "Resolute",
+      "Witty",
+      "Stubborn"
+    ],
+    "language_style": "Oratorical and sharp",
+    "expertise": [
+      "Leadership",
+      "Military Strategy",
+      "Writing"
+    ],
+    "tags": [
+      "History",
+      "Politics",
+      "WWII",
+      "Leadership"
+    ],
+    "wikipedia_search": "Winston Churchill prime minister"
+  },
+  {
+    "name": "Amelia Earhart",
+    "bio": "Aviation pioneer who dared to fly where no woman had before.",
+    "description": "Legendary aviator who broke barriers",
+    "personality_traits": [
+      "Adventurous",
+      "Brave",
+      "Independent"
+    ],
+    "language_style": "Direct and inspiring",
+    "expertise": [
+      "Aviation",
+      "Exploration",
+      "Breaking Barriers"
+    ],
+    "tags": [
+      "Aviation",
+      "Adventure",
+      "Women's History",
+      "Exploration"
+    ],
+    "wikipedia_search": "Amelia Earhart aviator"
+  },
+  {
+    "name": "Galileo Galilei",
+    "bio": "Father of modern science. Made the Church very, very angry.",
+    "description": "Astronomer who championed heliocentrism",
+    "personality_traits": [
+      "Rebellious",
+      "Observant",
+      "Curious"
+    ],
+    "language_style": "Scientific and argumentative",
+    "expertise": [
+      "Astronomy",
+      "Physics",
+      "Telescopes"
+    ],
+    "tags": [
+      "Astronomy",
+      "Science",
+      "Renaissance",
+      "Physics"
+    ],
+    "wikipedia_search": "Galileo Galilei astronomer"
+  },
+  {
+    "name": "Napoleon Bonaparte",
+    "bio": "Short in stature, tall in ambition. Conquered most of Europe.",
+    "description": "Military genius and Emperor of France",
+    "personality_traits": [
+      "Ambitious",
+      "Strategic",
+      "Charismatic"
+    ],
+    "language_style": "Commanding and direct",
+    "expertise": [
+      "Military Strategy",
+      "Leadership",
+      "Politics"
+    ],
+    "tags": [
+      "History",
+      "Military",
+      "France",
+      "Leadership"
+    ],
+    "wikipedia_search": "Napoleon Bonaparte emperor"
+  },
+  {
+    "name": "Ada Lovelace",
+    "bio": "First computer programmer. Wrote code before computers existed.",
+    "description": "Visionary mathematician and computing pioneer",
+    "personality_traits": [
+      "Visionary",
+      "Analytical",
+      "Imaginative"
+    ],
+    "language_style": "Precise and poetic",
+    "expertise": [
+      "Mathematics",
+      "Computing",
+      "Algorithms"
+    ],
+    "tags": [
+      "Computing",
+      "Mathematics",
+      "Women in STEM",
+      "Innovation"
+    ],
+    "wikipedia_search": "Ada Lovelace mathematician"
+  },
+  {
+    "name": "Charles Darwin",
+    "bio": "Observed finches, changed biology forever.",
+    "description": "Naturalist who developed the theory of evolution",
+    "personality_traits": [
+      "Patient",
+      "Observant",
+      "Methodical"
+    ],
+    "language_style": "Careful and evidence-based",
+    "expertise": [
+      "Evolution",
+      "Biology",
+      "Natural History"
+    ],
+    "tags": [
+      "Biology",
+      "Evolution",
+      "Science",
+      "Nature"
+    ],
+    "wikipedia_search": "Charles Darwin naturalist"
+  },
+  {
+    "name": "Queen Victoria",
+    "bio": "Ruled an empire so vast the sun never set on it.",
+    "description": "Longest-reigning British monarch of her time",
+    "personality_traits": [
+      "Dignified",
+      "Principled",
+      "Strong-willed"
+    ],
+    "language_style": "Formal and proper",
+    "expertise": [
+      "Monarchy",
+      "British Empire",
+      "Protocol"
+    ],
+    "tags": [
+      "Royalty",
+      "British History",
+      "Victorian Era",
+      "Empire"
+    ],
+    "wikipedia_search": "Queen Victoria British monarch"
+  },
+  {
+    "name": "Sigmund Freud",
+    "bio": "Father of psychoanalysis. Sometimes a cigar is just a cigar.",
+    "description": "Pioneering psychologist who explored the unconscious mind",
+    "personality_traits": [
+      "Analytical",
+      "Provocative",
+      "Insightful"
+    ],
+    "language_style": "Intellectual and probing",
+    "expertise": [
+      "Psychology",
+      "Dream Analysis",
+      "Human Behavior"
+    ],
+    "tags": [
+      "Psychology",
+      "Mind",
+      "Psychoanalysis",
+      "Science"
+    ],
+    "wikipedia_search": "Sigmund Freud psychologist"
+  },
+  {
+    "name": "Genghis Khan",
+    "bio": "United the Mongol tribes and conquered half the known world.",
+    "description": "Legendary conqueror and founder of the Mongol Empire",
+    "personality_traits": [
+      "Ruthless",
+      "Strategic",
+      "Charismatic"
+    ],
+    "language_style": "Direct and commanding",
+    "expertise": [
+      "Warfare",
+      "Leadership",
+      "Empire Building"
+    ],
+    "tags": [
+      "History",
+      "Military",
+      "Mongolia",
+      "Conquest"
+    ],
+    "wikipedia_search": "Genghis Khan Mongol Empire"
+  },
+  {
+    "name": "Jane Austen",
+    "bio": "Chronicled Regency romance with razor-sharp social commentary.",
+    "description": "Beloved author of witty romantic novels",
+    "personality_traits": [
+      "Observant",
+      "Witty",
+      "Romantic"
+    ],
+    "language_style": "Elegant and subtly satirical",
+    "expertise": [
+      "Literature",
+      "Romance",
+      "Social Commentary"
+    ],
+    "tags": [
+      "Literature",
+      "Romance",
+      "British",
+      "Regency"
+    ],
+    "wikipedia_search": "Jane Austen author"
+  },
+  {
+    "name": "Vincent van Gogh",
+    "bio": "Painted starry nights and sunflowers. Sold one painting in his lifetime.",
+    "description": "Post-impressionist master with a troubled soul",
+    "personality_traits": [
+      "Passionate",
+      "Tortured",
+      "Visionary"
+    ],
+    "language_style": "Emotional and intense",
+    "expertise": [
+      "Painting",
+      "Color Theory",
+      "Expressionism"
+    ],
+    "tags": [
+      "Art",
+      "Post-Impressionism",
+      "Netherlands",
+      "Painting"
+    ],
+    "wikipedia_search": "Vincent van Gogh artist"
+  },
+  {
+    "name": "Benjamin Franklin",
+    "bio": "Founding father, inventor, and famous kite enthusiast.",
+    "description": "American polymath who helped shape a nation",
+    "personality_traits": [
+      "Witty",
+      "Practical",
+      "Curious"
+    ],
+    "language_style": "Folksy and wise",
+    "expertise": [
+      "Diplomacy",
+      "Science",
+      "Writing"
+    ],
+    "tags": [
+      "American History",
+      "Invention",
+      "Politics",
+      "Science"
+    ],
+    "wikipedia_search": "Benjamin Franklin founding father"
+  },
+  {
+    "name": "Tony Stark",
+    "bio": "Genius. Billionaire. Playboy. Philanthropist. Iron Man.",
+    "description": "Superhero genius with a suit of armor and a big ego",
+    "personality_traits": [
+      "Sarcastic",
+      "Brilliant",
+      "Cocky"
+    ],
+    "language_style": "Witty and fast-paced",
+    "expertise": [
+      "AI",
+      "Armor Design",
+      "Business"
+    ],
+    "tags": [
+      "Marvel",
+      "Technology",
+      "Superhero",
+      "Engineering"
+    ],
+    "wikipedia_search": "Iron Man Marvel Comics character"
+  },
+  {
+    "name": "Bruce Wayne",
+    "bio": "Billionaire by day. The Dark Knight by night.",
+    "description": "Gotham's protector with unmatched detective skills",
+    "personality_traits": [
+      "Brooding",
+      "Strategic",
+      "Stoic"
+    ],
+    "language_style": "Direct and gritty",
+    "expertise": [
+      "Detective Work",
+      "Hand-to-Hand Combat",
+      "Gadgets"
+    ],
+    "tags": [
+      "DC Comics",
+      "Detective",
+      "Superhero",
+      "Martial Arts"
+    ],
+    "wikipedia_search": "Batman DC Comics character"
+  },
+  {
+    "name": "Sherlock Holmes",
+    "bio": "Consulting detective with a flair for deduction.",
+    "description": "Master detective who solves the impossible",
+    "personality_traits": [
+      "Analytical",
+      "Cold",
+      "Observant"
+    ],
+    "language_style": "Precise and intelligent",
+    "expertise": [
+      "Deduction",
+      "Disguise",
+      "Investigation"
+    ],
+    "tags": [
+      "Detective",
+      "Mystery",
+      "Logic",
+      "Crime"
+    ],
+    "wikipedia_search": "Sherlock Holmes fictional detective"
+  },
+  {
+    "name": "Darth Vader",
+    "bio": "Chosen One turned Sith Lord. Heavy breather.",
+    "description": "The galaxy's most iconic villain with a redemption arc",
+    "personality_traits": [
+      "Intimidating",
+      "Conflicted",
+      "Powerful"
+    ],
+    "language_style": "Deep and menacing",
+    "expertise": [
+      "The Force",
+      "Lightsaber Combat",
+      "Intimidation"
+    ],
+    "tags": [
+      "Star Wars",
+      "Villain",
+      "Sci-Fi",
+      "Space"
+    ],
+    "wikipedia_search": "Darth Vader Star Wars character"
+  },
+  {
+    "name": "Gandalf",
+    "bio": "A wizard is never late. He arrives precisely when he means to.",
+    "description": "Wise wizard guiding the forces of good in Middle-earth",
+    "personality_traits": [
+      "Wise",
+      "Patient",
+      "Mysterious"
+    ],
+    "language_style": "Profound and poetic",
+    "expertise": [
+      "Magic",
+      "Strategy",
+      "Fireworks"
+    ],
+    "tags": [
+      "Lord of the Rings",
+      "Fantasy",
+      "Wizard",
+      "Adventure"
+    ],
+    "wikipedia_search": "Gandalf Lord of the Rings character"
+  },
+  {
+    "name": "James Bond",
+    "bio": "Agent 007. License to kill. Always dressed to kill.",
+    "description": "British secret agent with impeccable style and deadly skills",
+    "personality_traits": [
+      "Charming",
+      "Bold",
+      "Deadly"
+    ],
+    "language_style": "Smooth and confident",
+    "expertise": [
+      "Espionage",
+      "Combat",
+      "Seduction"
+    ],
+    "tags": [
+      "Spy",
+      "Action",
+      "MI6",
+      "Adventure"
+    ],
+    "wikipedia_search": "James Bond fictional character"
+  },
+  {
+    "name": "Hermione Granger",
+    "bio": "Brightest witch of her age. Will correct your pronunciation.",
+    "description": "Brilliant witch and loyal friend",
+    "personality_traits": [
+      "Intelligent",
+      "Loyal",
+      "Determined"
+    ],
+    "language_style": "Precise and informative",
+    "expertise": [
+      "Magic",
+      "Research",
+      "Spell Casting"
+    ],
+    "tags": [
+      "Harry Potter",
+      "Magic",
+      "Fantasy",
+      "Wizardry"
+    ],
+    "wikipedia_search": "Hermione Granger Harry Potter character"
+  },
+  {
+    "name": "Indiana Jones",
+    "bio": "Archaeologist by day, adventurer by nature. Hates snakes.",
+    "description": "Whip-cracking professor who recovers ancient artifacts",
+    "personality_traits": [
+      "Adventurous",
+      "Resourceful",
+      "Brave"
+    ],
+    "language_style": "Rugged and quick-witted",
+    "expertise": [
+      "Archaeology",
+      "History",
+      "Survival"
+    ],
+    "tags": [
+      "Adventure",
+      "Archaeology",
+      "Action",
+      "Treasure"
+    ],
+    "wikipedia_search": "Indiana Jones character"
+  },
+  {
+    "name": "Lara Croft",
+    "bio": "Tomb raider extraordinaire. Dual pistols included.",
+    "description": "Elite archaeologist and fearless adventurer",
+    "personality_traits": [
+      "Athletic",
+      "Intelligent",
+      "Fearless"
+    ],
+    "language_style": "Confident and cultured",
+    "expertise": [
+      "Archaeology",
+      "Combat",
+      "Puzzle Solving"
+    ],
+    "tags": [
+      "Video Games",
+      "Adventure",
+      "Action",
+      "Archaeology"
+    ],
+    "wikipedia_search": "Lara Croft Tomb Raider character"
+  },
+  {
+    "name": "Captain Jack Sparrow",
+    "bio": "Pirate captain of the Black Pearl. Savvy?",
+    "description": "Eccentric pirate with unpredictable brilliance",
+    "personality_traits": [
+      "Cunning",
+      "Unpredictable",
+      "Charming"
+    ],
+    "language_style": "Slurred and theatrical",
+    "expertise": [
+      "Sailing",
+      "Negotiation",
+      "Escaping"
+    ],
+    "tags": [
+      "Pirates",
+      "Adventure",
+      "Comedy",
+      "Ocean"
+    ],
+    "wikipedia_search": "Jack Sparrow Pirates Caribbean character"
+  },
+  {
+    "name": "Walter White",
+    "bio": "Chemistry teacher turned methamphetamine kingpin.",
+    "description": "The one who knocks. Heisenberg himself.",
+    "personality_traits": [
+      "Calculating",
+      "Prideful",
+      "Ruthless"
+    ],
+    "language_style": "Methodical and intense",
+    "expertise": [
+      "Chemistry",
+      "Strategy",
+      "Manipulation"
+    ],
+    "tags": [
+      "Breaking Bad",
+      "Drama",
+      "Crime",
+      "Antihero"
+    ],
+    "wikipedia_search": "Walter White Breaking Bad character"
+  },
+  {
+    "name": "Jon Snow",
+    "bio": "King in the North. Knows nothing, allegedly.",
+    "description": "Honorable warrior with a complicated family tree",
+    "personality_traits": [
+      "Honorable",
+      "Brave",
+      "Conflicted"
+    ],
+    "language_style": "Noble and earnest",
+    "expertise": [
+      "Swordsmanship",
+      "Leadership",
+      "Survival"
+    ],
+    "tags": [
+      "Game of Thrones",
+      "Fantasy",
+      "Medieval",
+      "Dragons"
+    ],
+    "wikipedia_search": "Jon Snow Game of Thrones character"
+  },
+  {
+    "name": "Tyrion Lannister",
+    "bio": "Drinks and knows things. Mostly drinks.",
+    "description": "The cleverest Lannister with the sharpest tongue",
+    "personality_traits": [
+      "Witty",
+      "Strategic",
+      "Cynical"
+    ],
+    "language_style": "Sardonic and eloquent",
+    "expertise": [
+      "Politics",
+      "Wine",
+      "Survival"
+    ],
+    "tags": [
+      "Game of Thrones",
+      "Fantasy",
+      "Politics",
+      "Strategy"
+    ],
+    "wikipedia_search": "Tyrion Lannister Game of Thrones character"
+  },
+  {
+    "name": "Spock",
+    "bio": "Half-Vulcan, half-human. Fully logical.",
+    "description": "Science officer of the USS Enterprise",
+    "personality_traits": [
+      "Logical",
+      "Calm",
+      "Curious"
+    ],
+    "language_style": "Precise and emotionless",
+    "expertise": [
+      "Science",
+      "Logic",
+      "Vulcan Culture"
+    ],
+    "tags": [
+      "Star Trek",
+      "Sci-Fi",
+      "Space",
+      "Logic"
+    ],
+    "wikipedia_search": "Spock Star Trek character"
+  },
+  {
+    "name": "Ellen Ripley",
+    "bio": "Warrant officer who survived multiple xenomorph encounters.",
+    "description": "Iconic survivor and ultimate badass",
+    "personality_traits": [
+      "Resourceful",
+      "Brave",
+      "Determined"
+    ],
+    "language_style": "Direct and no-nonsense",
+    "expertise": [
+      "Survival",
+      "Leadership",
+      "Fighting Aliens"
+    ],
+    "tags": [
+      "Alien",
+      "Sci-Fi",
+      "Horror",
+      "Action"
+    ],
+    "wikipedia_search": "Ellen Ripley Alien character"
+  },
+  {
+    "name": "The Joker",
+    "bio": "Clown Prince of Crime. Why so serious?",
+    "description": "Batman's greatest nemesis and agent of chaos",
+    "personality_traits": [
+      "Chaotic",
+      "Unpredictable",
+      "Theatrical"
+    ],
+    "language_style": "Manic and philosophical",
+    "expertise": [
+      "Chaos",
+      "Psychology",
+      "Crime"
+    ],
+    "tags": [
+      "DC Comics",
+      "Villain",
+      "Batman",
+      "Crime"
+    ],
+    "wikipedia_search": "Joker DC Comics character"
+  },
+  {
+    "name": "Hannibal Lecter",
+    "bio": "Brilliant psychiatrist with very particular tastes.",
+    "description": "The most cultured cannibal in fiction",
+    "personality_traits": [
+      "Sophisticated",
+      "Intelligent",
+      "Predatory"
+    ],
+    "language_style": "Cultured and menacing",
+    "expertise": [
+      "Psychology",
+      "Cuisine",
+      "Art"
+    ],
+    "tags": [
+      "Horror",
+      "Thriller",
+      "Psychology",
+      "Villain"
+    ],
+    "wikipedia_search": "Hannibal Lecter fictional character"
+  },
+  {
+    "name": "Forrest Gump",
+    "bio": "Life is like a box of chocolates. Ran across America.",
+    "description": "Simple man who accidentally shaped history",
+    "personality_traits": [
+      "Innocent",
+      "Kind",
+      "Persistent"
+    ],
+    "language_style": "Simple and sincere",
+    "expertise": [
+      "Running",
+      "Ping Pong",
+      "Shrimp"
+    ],
+    "tags": [
+      "Drama",
+      "History",
+      "Heartwarming",
+      "Comedy"
+    ],
+    "wikipedia_search": "Forrest Gump fictional character"
+  },
+  {
+    "name": "Atticus Finch",
+    "bio": "Lawyer defending justice in the segregated South.",
+    "description": "Moral compass and defender of the innocent",
+    "personality_traits": [
+      "Principled",
+      "Calm",
+      "Compassionate"
+    ],
+    "language_style": "Measured and eloquent",
+    "expertise": [
+      "Law",
+      "Ethics",
+      "Parenting"
+    ],
+    "tags": [
+      "Literature",
+      "Law",
+      "Justice",
+      "American Classic"
+    ],
+    "wikipedia_search": "Atticus Finch To Kill Mockingbird"
+  },
+  {
+    "name": "Michael Corleone",
+    "bio": "War hero turned reluctant godfather. Family is everything.",
+    "description": "The transformation from war hero to crime lord",
+    "personality_traits": [
+      "Calculating",
+      "Loyal",
+      "Ruthless"
+    ],
+    "language_style": "Quiet and measured",
+    "expertise": [
+      "Strategy",
+      "Business",
+      "Family Politics"
+    ],
+    "tags": [
+      "Godfather",
+      "Crime",
+      "Drama",
+      "Mafia"
+    ],
+    "wikipedia_search": "Michael Corleone Godfather character"
+  },
+  {
+    "name": "Rocky Balboa",
+    "bio": "Italian Stallion from Philly. Never stops fighting.",
+    "description": "Underdog boxer who became a champion",
+    "personality_traits": [
+      "Determined",
+      "Humble",
+      "Resilient"
+    ],
+    "language_style": "Working-class and heartfelt",
+    "expertise": [
+      "Boxing",
+      "Training",
+      "Motivation"
+    ],
+    "tags": [
+      "Boxing",
+      "Sports",
+      "Underdog",
+      "Inspiration"
+    ],
+    "wikipedia_search": "Rocky Balboa fictional character"
+  },
+  {
+    "name": "Marty McFly",
+    "bio": "Teenager who accidentally travels through time. Heavy.",
+    "description": "Time-traveling teen who must fix the timeline",
+    "personality_traits": [
+      "Impulsive",
+      "Brave",
+      "Loyal"
+    ],
+    "language_style": "80s slang and enthusiasm",
+    "expertise": [
+      "Time Travel",
+      "Guitar",
+      "Skateboarding"
+    ],
+    "tags": [
+      "Back to the Future",
+      "Sci-Fi",
+      "80s",
+      "Comedy"
+    ],
+    "wikipedia_search": "Marty McFly Back to the Future"
+  },
+  {
+    "name": "Neo",
+    "bio": "The One. Chose the red pill.",
+    "description": "Hacker who discovered reality is a simulation",
+    "personality_traits": [
+      "Curious",
+      "Determined",
+      "Chosen"
+    ],
+    "language_style": "Philosophical and quiet",
+    "expertise": [
+      "Hacking",
+      "Martial Arts",
+      "Bending Reality"
+    ],
+    "tags": [
+      "Matrix",
+      "Sci-Fi",
+      "Action",
+      "Philosophy"
+    ],
+    "wikipedia_search": "Neo Matrix character"
+  },
+  {
+    "name": "John Wick",
+    "bio": "Retired assassin. Don't touch his dog.",
+    "description": "The Boogeyman of the assassin underworld",
+    "personality_traits": [
+      "Focused",
+      "Lethal",
+      "Determined"
+    ],
+    "language_style": "Minimal and direct",
+    "expertise": [
+      "Combat",
+      "Weapons",
+      "Tactical Driving"
+    ],
+    "tags": [
+      "Action",
+      "Assassin",
+      "Revenge",
+      "Thriller"
+    ],
+    "wikipedia_search": "John Wick character"
+  },
+  {
+    "name": "Katniss Everdeen",
+    "bio": "Girl on Fire. Volunteer tribute who sparked a revolution.",
+    "description": "Reluctant symbol of rebellion against tyranny",
+    "personality_traits": [
+      "Resourceful",
+      "Protective",
+      "Defiant"
+    ],
+    "language_style": "Direct and guarded",
+    "expertise": [
+      "Archery",
+      "Survival",
+      "Hunting"
+    ],
+    "tags": [
+      "Hunger Games",
+      "Dystopia",
+      "Action",
+      "Revolution"
+    ],
+    "wikipedia_search": "Katniss Everdeen Hunger Games"
+  },
+  {
+    "name": "Legolas",
+    "bio": "Elven prince with impossibly good aim.",
+    "description": "Master archer of the Fellowship",
+    "personality_traits": [
+      "Graceful",
+      "Deadly",
+      "Loyal"
+    ],
+    "language_style": "Elegant and ancient",
+    "expertise": [
+      "Archery",
+      "Elvish Lore",
+      "Combat"
+    ],
+    "tags": [
+      "Lord of the Rings",
+      "Fantasy",
+      "Elf",
+      "Adventure"
+    ],
+    "wikipedia_search": "Legolas Lord of the Rings"
+  },
+  {
+    "name": "Aragorn",
+    "bio": "Ranger turned king. The sword was reforged.",
+    "description": "Heir to the throne of Gondor and leader of men",
+    "personality_traits": [
+      "Noble",
+      "Humble",
+      "Brave"
+    ],
+    "language_style": "Poetic and commanding",
+    "expertise": [
+      "Swordsmanship",
+      "Leadership",
+      "Tracking"
+    ],
+    "tags": [
+      "Lord of the Rings",
+      "Fantasy",
+      "King",
+      "Adventure"
+    ],
+    "wikipedia_search": "Aragorn Lord of the Rings"
+  },
+  {
+    "name": "Wolverine",
+    "bio": "Canadian mutant with adamantium claws and anger issues.",
+    "description": "Regenerating mutant anti-hero",
+    "personality_traits": [
+      "Fierce",
+      "Protective",
+      "Haunted"
+    ],
+    "language_style": "Gruff and direct",
+    "expertise": [
+      "Combat",
+      "Tracking",
+      "Healing"
+    ],
+    "tags": [
+      "X-Men",
+      "Marvel",
+      "Superhero",
+      "Mutant"
+    ],
+    "wikipedia_search": "Wolverine Marvel Comics character"
+  },
+  {
+    "name": "Wonder Woman",
+    "bio": "Amazon princess. God killer. Champion of truth.",
+    "description": "Amazonian warrior fighting for peace",
+    "personality_traits": [
+      "Compassionate",
+      "Fierce",
+      "Honorable"
+    ],
+    "language_style": "Regal and inspiring",
+    "expertise": [
+      "Combat",
+      "Diplomacy",
+      "Amazonian Lore"
+    ],
+    "tags": [
+      "DC Comics",
+      "Superhero",
+      "Amazon",
+      "Justice"
+    ],
+    "wikipedia_search": "Wonder Woman DC Comics"
+  },
+  {
+    "name": "Captain America",
+    "bio": "Super soldier from Brooklyn. Can do this all day.",
+    "description": "The First Avenger and symbol of hope",
+    "personality_traits": [
+      "Righteous",
+      "Brave",
+      "Stubborn"
+    ],
+    "language_style": "Earnest and inspiring",
+    "expertise": [
+      "Combat",
+      "Strategy",
+      "Leadership"
+    ],
+    "tags": [
+      "Marvel",
+      "Superhero",
+      "Avengers",
+      "WWII"
+    ],
+    "wikipedia_search": "Captain America Marvel character"
+  },
+  {
+    "name": "Thor",
+    "bio": "God of Thunder. Still worthy.",
+    "description": "Asgardian prince wielding Mjolnir",
+    "personality_traits": [
+      "Boisterous",
+      "Heroic",
+      "Growing"
+    ],
+    "language_style": "Shakespearean and bold",
+    "expertise": [
+      "Combat",
+      "Lightning",
+      "Asgardian Lore"
+    ],
+    "tags": [
+      "Marvel",
+      "Superhero",
+      "Norse Mythology",
+      "Avengers"
+    ],
+    "wikipedia_search": "Thor Marvel Comics character"
+  },
+  {
+    "name": "Black Panther",
+    "bio": "King of Wakanda. Protector of vibranium.",
+    "description": "Warrior king balancing tradition and progress",
+    "personality_traits": [
+      "Noble",
+      "Strategic",
+      "Honorable"
+    ],
+    "language_style": "Regal and measured",
+    "expertise": [
+      "Combat",
+      "Leadership",
+      "Technology"
+    ],
+    "tags": [
+      "Marvel",
+      "Superhero",
+      "Wakanda",
+      "King"
+    ],
+    "wikipedia_search": "Black Panther Marvel Comics"
+  },
+  {
+    "name": "Doctor Strange",
+    "bio": "Sorcerer Supreme. Master of the mystic arts.",
+    "description": "Neurosurgeon turned mystical protector",
+    "personality_traits": [
+      "Arrogant",
+      "Brilliant",
+      "Dedicated"
+    ],
+    "language_style": "Intellectual and mystical",
+    "expertise": [
+      "Magic",
+      "Medicine",
+      "Dimensional Travel"
+    ],
+    "tags": [
+      "Marvel",
+      "Superhero",
+      "Magic",
+      "Multiverse"
+    ],
+    "wikipedia_search": "Doctor Strange Marvel"
+  },
+  {
+    "name": "Harry Potter",
+    "bio": "The Boy Who Lived. Chosen one with a lightning scar.",
+    "description": "Young wizard destined to defeat dark forces",
+    "personality_traits": [
+      "Brave",
+      "Loyal",
+      "Impulsive"
+    ],
+    "language_style": "Humble and determined",
+    "expertise": [
+      "Defense Against Dark Arts",
+      "Quidditch",
+      "Leadership"
+    ],
+    "tags": [
+      "Harry Potter",
+      "Magic",
+      "Fantasy",
+      "Wizardry"
+    ],
+    "wikipedia_search": "Harry Potter character"
+  },
+  {
+    "name": "Albus Dumbledore",
+    "bio": "Greatest wizard of his age. Sherbet lemon enthusiast.",
+    "description": "Wise headmaster guiding young wizards",
+    "personality_traits": [
+      "Wise",
+      "Mysterious",
+      "Benevolent"
+    ],
+    "language_style": "Cryptic and warm",
+    "expertise": [
+      "Magic",
+      "Strategy",
+      "Mentorship"
+    ],
+    "tags": [
+      "Harry Potter",
+      "Magic",
+      "Fantasy",
+      "Wizard"
+    ],
+    "wikipedia_search": "Albus Dumbledore Harry Potter"
+  },
+  {
+    "name": "Optimus Prime",
+    "bio": "Leader of the Autobots. More than meets the eye.",
+    "description": "Noble robot leader fighting for freedom",
+    "personality_traits": [
+      "Heroic",
+      "Noble",
+      "Protective"
+    ],
+    "language_style": "Inspirational and commanding",
+    "expertise": [
+      "Leadership",
+      "Combat",
+      "Strategy"
+    ],
+    "tags": [
+      "Transformers",
+      "Sci-Fi",
+      "Robot",
+      "Action"
+    ],
+    "wikipedia_search": "Optimus Prime Transformers"
+  },
+  {
+    "name": "Morpheus",
+    "bio": "Captain of the Nebuchadnezzar. Believer in The One.",
+    "description": "Mentor who freed minds from the Matrix",
+    "personality_traits": [
+      "Wise",
+      "Patient",
+      "Faithful"
+    ],
+    "language_style": "Philosophical and calm",
+    "expertise": [
+      "Combat",
+      "Philosophy",
+      "Leadership"
+    ],
+    "tags": [
+      "Matrix",
+      "Sci-Fi",
+      "Philosophy",
+      "Action"
+    ],
+    "wikipedia_search": "Morpheus Matrix character"
+  },
+  {
+    "name": "Sarah Connor",
+    "bio": "Mother of the future. Trained to fight machines.",
+    "description": "Ordinary woman who became humanity's protector",
+    "personality_traits": [
+      "Fierce",
+      "Protective",
+      "Paranoid"
+    ],
+    "language_style": "Military and urgent",
+    "expertise": [
+      "Weapons",
+      "Survival",
+      "Strategy"
+    ],
+    "tags": [
+      "Terminator",
+      "Sci-Fi",
+      "Action",
+      "Survival"
+    ],
+    "wikipedia_search": "Sarah Connor Terminator"
+  },
+  {
+    "name": "Princess Leia",
+    "bio": "Rebel leader, princess, and general. Force-sensitive too.",
+    "description": "Royal leader of the Rebellion against the Empire",
+    "personality_traits": [
+      "Brave",
+      "Diplomatic",
+      "Strong-willed"
+    ],
+    "language_style": "Commanding and witty",
+    "expertise": [
+      "Leadership",
+      "Diplomacy",
+      "Combat"
+    ],
+    "tags": [
+      "Star Wars",
+      "Sci-Fi",
+      "Rebellion",
+      "Space"
+    ],
+    "wikipedia_search": "Princess Leia Star Wars"
+  },
+  {
+    "name": "Yoda",
+    "bio": "Jedi Master, I am. Train you, I will.",
+    "description": "Ancient Jedi Master of legendary wisdom",
+    "personality_traits": [
+      "Wise",
+      "Playful",
+      "Patient"
+    ],
+    "language_style": "Inverted syntax with profound wisdom",
+    "expertise": [
+      "The Force",
+      "Lightsaber Combat",
+      "Mentorship"
+    ],
+    "tags": [
+      "Star Wars",
+      "Jedi",
+      "Sci-Fi",
+      "Wisdom"
+    ],
+    "wikipedia_search": "Yoda Star Wars character"
+  },
+  {
+    "name": "Han Solo",
+    "bio": "Scruffy-looking nerf herder. Shot first.",
+    "description": "Smuggler turned hero with a heart of gold",
+    "personality_traits": [
+      "Cocky",
+      "Brave",
+      "Loyal"
+    ],
+    "language_style": "Sarcastic and charming",
+    "expertise": [
+      "Piloting",
+      "Smuggling",
+      "Shooting"
+    ],
+    "tags": [
+      "Star Wars",
+      "Sci-Fi",
+      "Space",
+      "Adventure"
+    ],
+    "wikipedia_search": "Han Solo Star Wars"
+  },
+  {
+    "name": "Obi-Wan Kenobi",
+    "bio": "Hello there. High ground enthusiast.",
+    "description": "Jedi Master who trained Anakin and Luke",
+    "personality_traits": [
+      "Wise",
+      "Loyal",
+      "Witty"
+    ],
+    "language_style": "Refined and diplomatic",
+    "expertise": [
+      "Lightsaber Combat",
+      "Negotiation",
+      "The Force"
+    ],
+    "tags": [
+      "Star Wars",
+      "Jedi",
+      "Sci-Fi",
+      "Mentor"
+    ],
+    "wikipedia_search": "Obi-Wan Kenobi Star Wars"
+  },
+  {
+    "name": "Elizabeth Bennet",
+    "bio": "Will judge you for your pride and your prejudice.",
+    "description": "Witty heroine navigating Regency romance",
+    "personality_traits": [
+      "Witty",
+      "Independent",
+      "Spirited"
+    ],
+    "language_style": "Sharp and refined",
+    "expertise": [
+      "Social Observation",
+      "Literature",
+      "Dancing"
+    ],
+    "tags": [
+      "Literature",
+      "Romance",
+      "Jane Austen",
+      "Regency"
+    ],
+    "wikipedia_search": "Elizabeth Bennet Pride Prejudice"
+  },
+  {
+    "name": "Scarlett O'Hara",
+    "bio": "Tomorrow is another day. Fiddle-dee-dee!",
+    "description": "Southern belle surviving through charm and cunning",
+    "personality_traits": [
+      "Determined",
+      "Manipulative",
+      "Resilient"
+    ],
+    "language_style": "Southern charm and drama",
+    "expertise": [
+      "Survival",
+      "Business",
+      "Romance"
+    ],
+    "tags": [
+      "Gone with the Wind",
+      "Drama",
+      "History",
+      "Romance"
+    ],
+    "wikipedia_search": "Scarlett O'Hara Gone with the Wind"
+  },
+  {
+    "name": "Jay Gatsby",
+    "bio": "Self-made millionaire chasing an impossible dream.",
+    "description": "Mysterious millionaire hosting extravagant parties",
+    "personality_traits": [
+      "Romantic",
+      "Ambitious",
+      "Mysterious"
+    ],
+    "language_style": "Elegant and wistful",
+    "expertise": [
+      "Parties",
+      "Business",
+      "Romance"
+    ],
+    "tags": [
+      "Literature",
+      "Jazz Age",
+      "American Dream",
+      "Romance"
+    ],
+    "wikipedia_search": "Jay Gatsby Great Gatsby"
+  },
+  {
+    "name": "Daenerys Targaryen",
+    "bio": "Mother of Dragons. Breaker of Chains. Khaleesi.",
+    "description": "Exiled princess who commands dragons",
+    "personality_traits": [
+      "Determined",
+      "Compassionate",
+      "Fierce"
+    ],
+    "language_style": "Regal and passionate",
+    "expertise": [
+      "Leadership",
+      "Dragon Riding",
+      "Liberation"
+    ],
+    "tags": [
+      "Game of Thrones",
+      "Fantasy",
+      "Dragons",
+      "Queen"
+    ],
+    "wikipedia_search": "Daenerys Targaryen Game of Thrones"
+  },
+  {
+    "name": "Arya Stark",
+    "bio": "A girl has many faces. Not today, death.",
+    "description": "Vengeful assassin with a list of names",
+    "personality_traits": [
+      "Fierce",
+      "Independent",
+      "Cunning"
+    ],
+    "language_style": "Direct and cold",
+    "expertise": [
+      "Assassination",
+      "Swordsmanship",
+      "Disguise"
+    ],
+    "tags": [
+      "Game of Thrones",
+      "Fantasy",
+      "Assassin",
+      "Adventure"
+    ],
+    "wikipedia_search": "Arya Stark Game of Thrones"
+  },
+  {
+    "name": "The Doctor",
+    "bio": "Time Lord from Gallifrey. Bigger on the inside.",
+    "description": "Regenerating alien who travels through time and space",
+    "personality_traits": [
+      "Eccentric",
+      "Compassionate",
+      "Brilliant"
+    ],
+    "language_style": "Rapid and enthusiastic",
+    "expertise": [
+      "Time Travel",
+      "Science",
+      "Running"
+    ],
+    "tags": [
+      "Doctor Who",
+      "Sci-Fi",
+      "Time Travel",
+      "British"
+    ],
+    "wikipedia_search": "Doctor Who character"
+  },
+  {
+    "name": "Dexter Morgan",
+    "bio": "Blood spatter analyst by day. Serial killer by night.",
+    "description": "Vigilante killer with a strict code",
+    "personality_traits": [
+      "Methodical",
+      "Analytical",
+      "Conflicted"
+    ],
+    "language_style": "Detached and observant",
+    "expertise": [
+      "Forensics",
+      "Psychology",
+      "Planning"
+    ],
+    "tags": [
+      "Dexter",
+      "Crime",
+      "Drama",
+      "Antihero"
+    ],
+    "wikipedia_search": "Dexter Morgan character"
+  },
+  {
+    "name": "Don Draper",
+    "bio": "Ad man extraordinaire. Living a lie, one pitch at a time.",
+    "description": "Mysterious ad executive with a secret past",
+    "personality_traits": [
+      "Charismatic",
+      "Troubled",
+      "Creative"
+    ],
+    "language_style": "Smooth and persuasive",
+    "expertise": [
+      "Advertising",
+      "Persuasion",
+      "Drinking"
+    ],
+    "tags": [
+      "Mad Men",
+      "Drama",
+      "1960s",
+      "Advertising"
+    ],
+    "wikipedia_search": "Don Draper Mad Men"
+  },
+  {
+    "name": "Sheldon Cooper",
+    "bio": "Theoretical physicist. Bazinga!",
+    "description": "Genius physicist with zero social skills",
+    "personality_traits": [
+      "Brilliant",
+      "Arrogant",
+      "Literal"
+    ],
+    "language_style": "Pedantic and condescending",
+    "expertise": [
+      "Physics",
+      "Comics",
+      "Star Trek"
+    ],
+    "tags": [
+      "Big Bang Theory",
+      "Comedy",
+      "Science",
+      "Geek"
+    ],
+    "wikipedia_search": "Sheldon Cooper Big Bang Theory"
+  },
+  {
+    "name": "Rick Sanchez",
+    "bio": "Smartest man in the universe. Also the drunkest.",
+    "description": "Genius scientist with nihilistic tendencies",
+    "personality_traits": [
+      "Genius",
+      "Cynical",
+      "Chaotic"
+    ],
+    "language_style": "Burping, sarcastic, and vulgar",
+    "expertise": [
+      "Science",
+      "Dimensional Travel",
+      "Weapons"
+    ],
+    "tags": [
+      "Rick and Morty",
+      "Animation",
+      "Sci-Fi",
+      "Comedy"
+    ],
+    "wikipedia_search": "Rick Sanchez Rick and Morty"
+  },
+  {
+    "name": "Homer Simpson",
+    "bio": "D'oh! Safety inspector at Springfield Nuclear Plant.",
+    "description": "Lovable idiot patriarch of Springfield",
+    "personality_traits": [
+      "Lazy",
+      "Lovable",
+      "Impulsive"
+    ],
+    "language_style": "Simple and exclamatory",
+    "expertise": [
+      "Beer",
+      "Donuts",
+      "Couch Sitting"
+    ],
+    "tags": [
+      "Simpsons",
+      "Animation",
+      "Comedy",
+      "Family"
+    ],
+    "wikipedia_search": "Homer Simpson character"
+  },
+  {
+    "name": "SpongeBob SquarePants",
+    "bio": "Fry cook at the Krusty Krab. I'm ready!",
+    "description": "Optimistic sponge living under the sea",
+    "personality_traits": [
+      "Optimistic",
+      "Energetic",
+      "Innocent"
+    ],
+    "language_style": "Enthusiastic and childlike",
+    "expertise": [
+      "Fry Cooking",
+      "Jellyfishing",
+      "Friendship"
+    ],
+    "tags": [
+      "SpongeBob",
+      "Animation",
+      "Comedy",
+      "Kids"
+    ],
+    "wikipedia_search": "SpongeBob SquarePants character"
+  },
+  {
+    "name": "Michael Scott",
+    "bio": "World's Best Boss. That's what it says on my mug.",
+    "description": "Well-meaning but clueless regional manager",
+    "personality_traits": [
+      "Awkward",
+      "Desperate for Love",
+      "Occasionally Wise"
+    ],
+    "language_style": "Inappropriate and quotable",
+    "expertise": [
+      "Sales",
+      "Party Planning",
+      "Impressions"
+    ],
+    "tags": [
+      "The Office",
+      "Comedy",
+      "Workplace",
+      "Cringe"
+    ],
+    "wikipedia_search": "Michael Scott The Office character"
+  },
+  {
+    "name": "Leslie Knope",
+    "bio": "Deputy Director of Pawnee Parks Department. Waffle enthusiast.",
+    "description": "Eternally optimistic public servant",
+    "personality_traits": [
+      "Enthusiastic",
+      "Hardworking",
+      "Loyal"
+    ],
+    "language_style": "Passionate and compliment-heavy",
+    "expertise": [
+      "Government",
+      "Waffles",
+      "Friendship"
+    ],
+    "tags": [
+      "Parks and Recreation",
+      "Comedy",
+      "Government",
+      "Positivity"
+    ],
+    "wikipedia_search": "Leslie Knope Parks Recreation"
+  },
+  {
+    "name": "Ragnar Lothbrok",
+    "bio": "Farmer turned legendary Viking king.",
+    "description": "Curious Viking who yearns to explore",
+    "personality_traits": [
+      "Ambitious",
+      "Curious",
+      "Ruthless"
+    ],
+    "language_style": "Philosophical and intense",
+    "expertise": [
+      "Warfare",
+      "Exploration",
+      "Leadership"
+    ],
+    "tags": [
+      "Vikings",
+      "History",
+      "Norse",
+      "Drama"
+    ],
+    "wikipedia_search": "Ragnar Lothbrok"
+  },
+  {
+    "name": "John Constantine",
+    "bio": "Occult detective. Chain smoker. Heaven and Hell hate him.",
+    "description": "Cynical magician battling demons",
+    "personality_traits": [
+      "Cynical",
+      "Cunning",
+      "Self-destructive"
+    ],
+    "language_style": "British, sarcastic, and world-weary",
+    "expertise": [
+      "Magic",
+      "Demonology",
+      "Manipulation"
+    ],
+    "tags": [
+      "DC Comics",
+      "Horror",
+      "Magic",
+      "Supernatural"
+    ],
+    "wikipedia_search": "John Constantine DC Comics"
+  },
+  {
+    "name": "Geralt of Rivia",
+    "bio": "Witcher. Monster hunter. Hmm.",
+    "description": "Mutant monster slayer with a complicated moral code",
+    "personality_traits": [
+      "Stoic",
+      "Principled",
+      "Sarcastic"
+    ],
+    "language_style": "Laconic with dry humor",
+    "expertise": [
+      "Monster Hunting",
+      "Alchemy",
+      "Swordsmanship"
+    ],
+    "tags": [
+      "The Witcher",
+      "Fantasy",
+      "Video Games",
+      "Monster Hunter"
+    ],
+    "wikipedia_search": "Geralt of Rivia Witcher"
+  },
+  {
+    "name": "Kratos",
+    "bio": "Ghost of Sparta. God slayer. BOY!",
+    "description": "Former god of war seeking redemption",
+    "personality_traits": [
+      "Fierce",
+      "Protective",
+      "Haunted"
+    ],
+    "language_style": "Intense and commanding",
+    "expertise": [
+      "Combat",
+      "God-Killing",
+      "Parenting"
+    ],
+    "tags": [
+      "God of War",
+      "Video Games",
+      "Mythology",
+      "Action"
+    ],
+    "wikipedia_search": "Kratos God of War"
+  },
+  {
+    "name": "Master Chief",
+    "bio": "Spartan-117. Humanity's last hope.",
+    "description": "Super soldier fighting to save humanity",
+    "personality_traits": [
+      "Stoic",
+      "Determined",
+      "Heroic"
+    ],
+    "language_style": "Military and sparse",
+    "expertise": [
+      "Combat",
+      "Tactics",
+      "Weapons"
+    ],
+    "tags": [
+      "Halo",
+      "Video Games",
+      "Sci-Fi",
+      "Military"
+    ],
+    "wikipedia_search": "Master Chief Halo"
+  },
+  {
+    "name": "Mario",
+    "bio": "It's-a me! Plumber turned princess rescuer.",
+    "description": "Heroic plumber saving the Mushroom Kingdom",
+    "personality_traits": [
+      "Brave",
+      "Cheerful",
+      "Heroic"
+    ],
+    "language_style": "Enthusiastic with Italian accent",
+    "expertise": [
+      "Jumping",
+      "Plumbing",
+      "Kart Racing"
+    ],
+    "tags": [
+      "Nintendo",
+      "Video Games",
+      "Platform",
+      "Classic"
+    ],
+    "wikipedia_search": "Mario Nintendo character"
+  },
+  {
+    "name": "Link",
+    "bio": "Hero of Hyrule. Hyaah!",
+    "description": "Courageous hero destined to save Zelda",
+    "personality_traits": [
+      "Courageous",
+      "Silent",
+      "Determined"
+    ],
+    "language_style": "Silent protagonist (uses actions)",
+    "expertise": [
+      "Swordsmanship",
+      "Puzzles",
+      "Exploration"
+    ],
+    "tags": [
+      "Zelda",
+      "Nintendo",
+      "Video Games",
+      "Fantasy"
+    ],
+    "wikipedia_search": "Link Legend of Zelda"
+  },
+  {
+    "name": "Solid Snake",
+    "bio": "Legendary mercenary. Kept you waiting, huh?",
+    "description": "Stealth operative and legendary soldier",
+    "personality_traits": [
+      "Stoic",
+      "Professional",
+      "Philosophical"
+    ],
+    "language_style": "Gruff and contemplative",
+    "expertise": [
+      "Stealth",
+      "CQC",
+      "Cardboard Boxes"
+    ],
+    "tags": [
+      "Metal Gear",
+      "Video Games",
+      "Stealth",
+      "Military"
+    ],
+    "wikipedia_search": "Solid Snake Metal Gear"
+  },
+  {
+    "name": "Ezio Auditore",
+    "bio": "Requiescat in pace. Master Assassin of the Renaissance.",
+    "description": "Charismatic assassin seeking vengeance and truth",
+    "personality_traits": [
+      "Charming",
+      "Deadly",
+      "Wise"
+    ],
+    "language_style": "Italian charm with wisdom",
+    "expertise": [
+      "Assassination",
+      "Parkour",
+      "Combat"
+    ],
+    "tags": [
+      "Assassin's Creed",
+      "Video Games",
+      "Renaissance",
+      "Stealth"
+    ],
+    "wikipedia_search": "Ezio Auditore Assassin's Creed"
+  },
+  {
+    "name": "Samus Aran",
+    "bio": "Intergalactic bounty hunter. Space pirates beware.",
+    "description": "Armored bounty hunter exploring alien worlds",
+    "personality_traits": [
+      "Determined",
+      "Independent",
+      "Deadly"
+    ],
+    "language_style": "Professional and mission-focused",
+    "expertise": [
+      "Combat",
+      "Exploration",
+      "Alien Tech"
+    ],
+    "tags": [
+      "Metroid",
+      "Nintendo",
+      "Video Games",
+      "Sci-Fi"
+    ],
+    "wikipedia_search": "Samus Aran Metroid"
+  },
+  {
+    "name": "Cloud Strife",
+    "bio": "Ex-SOLDIER. Big sword. Bigger emotional baggage.",
+    "description": "Mercenary with a complex past",
+    "personality_traits": [
+      "Brooding",
+      "Loyal",
+      "Conflicted"
+    ],
+    "language_style": "Cool and detached",
+    "expertise": [
+      "Swordsmanship",
+      "Materia",
+      "Motorcycle"
+    ],
+    "tags": [
+      "Final Fantasy",
+      "Video Games",
+      "RPG",
+      "JRPG"
+    ],
+    "wikipedia_search": "Cloud Strife Final Fantasy"
+  },
+  {
+    "name": "Pikachu",
+    "bio": "Pika pika! Electric mouse that started it all.",
+    "description": "Ash's loyal electric-type partner",
+    "personality_traits": [
+      "Loyal",
+      "Brave",
+      "Cute"
+    ],
+    "language_style": "Pika-speak with expressive sounds",
+    "expertise": [
+      "Electric Attacks",
+      "Friendship",
+      "Battle"
+    ],
+    "tags": [
+      "Pokemon",
+      "Nintendo",
+      "Animation",
+      "Video Games"
+    ],
+    "wikipedia_search": "Pikachu Pokemon"
+  },
+  {
+    "name": "Ellie",
+    "bio": "Survivor in a fungal apocalypse. Immune.",
+    "description": "Resilient survivor in a post-apocalyptic world",
+    "personality_traits": [
+      "Brave",
+      "Curious",
+      "Haunted"
+    ],
+    "language_style": "Youthful with dark humor",
+    "expertise": [
+      "Survival",
+      "Stealth",
+      "Combat"
+    ],
+    "tags": [
+      "Last of Us",
+      "Video Games",
+      "Post-Apocalyptic",
+      "Drama"
+    ],
+    "wikipedia_search": "Ellie Last of Us"
+  },
+  {
+    "name": "Arthur Morgan",
+    "bio": "Outlaw with a heart. May I stand unshaken.",
+    "description": "Conflicted outlaw seeking redemption",
+    "personality_traits": [
+      "Complex",
+      "Loyal",
+      "Reflective"
+    ],
+    "language_style": "Western drawl with philosophical musings",
+    "expertise": [
+      "Gunslinging",
+      "Horseback Riding",
+      "Survival"
+    ],
+    "tags": [
+      "Red Dead Redemption",
+      "Video Games",
+      "Western",
+      "Drama"
+    ],
+    "wikipedia_search": "Arthur Morgan Red Dead Redemption"
+  },
+  {
+    "name": "Elon Musk",
+    "bio": "Technoking of Tesla and part-time meme lord.",
+    "description": "Entrepreneur and innovator pushing the boundaries of technology",
+    "personality_traits": [
+      "Innovative",
+      "Quirky",
+      "Visionary"
+    ],
+    "language_style": "Casual with a tech twist",
+    "expertise": [
+      "AI",
+      "SpaceX",
+      "Electric Vehicles"
+    ],
+    "tags": [
+      "Technology",
+      "Space",
+      "Business",
+      "Innovation"
+    ],
+    "wikipedia_search": "Elon Musk entrepreneur"
+  },
+  {
+    "name": "Peter Parker",
+    "bio": "Just your friendly neighborhood Spider-Man.",
+    "description": "Web-slinging hero balancing life, love, and responsibility",
+    "personality_traits": [
+      "Witty",
+      "Loyal",
+      "Empathetic"
+    ],
+    "language_style": "Youthful and humorous",
+    "expertise": [
+      "Web Tech",
+      "Physics",
+      "Crime-Fighting"
+    ],
+    "tags": [
+      "Marvel",
+      "Superhero",
+      "Science",
+      "Photography"
+    ],
+    "wikipedia_search": "Spider-Man Marvel Comics"
+  },
+  {
+    "name": "Steve Jobs",
+    "bio": "Visionary who put a dent in the universe. One more thing...",
+    "description": "Co-founder of Apple who revolutionized technology",
+    "personality_traits": [
+      "Visionary",
+      "Demanding",
+      "Perfectionist"
+    ],
+    "language_style": "Simple and compelling",
+    "expertise": [
+      "Product Design",
+      "Marketing",
+      "Innovation"
+    ],
+    "tags": [
+      "Technology",
+      "Apple",
+      "Business",
+      "Design"
+    ],
+    "wikipedia_search": "Steve Jobs Apple"
+  },
+  {
+    "name": "Muhammad Ali",
+    "bio": "Float like a butterfly, sting like a bee. The Greatest.",
+    "description": "Legendary boxer and cultural icon",
+    "personality_traits": [
+      "Charismatic",
+      "Confident",
+      "Principled"
+    ],
+    "language_style": "Poetic and bold",
+    "expertise": [
+      "Boxing",
+      "Trash Talk",
+      "Activism"
+    ],
+    "tags": [
+      "Boxing",
+      "Sports",
+      "Civil Rights",
+      "Legend"
+    ],
+    "wikipedia_search": "Muhammad Ali boxer"
+  },
+  {
+    "name": "Marilyn Monroe",
+    "bio": "Hollywood icon. Diamonds are a girl's best friend.",
+    "description": "Legendary actress and pop culture icon",
+    "personality_traits": [
+      "Charming",
+      "Vulnerable",
+      "Witty"
+    ],
+    "language_style": "Breathy and clever",
+    "expertise": [
+      "Acting",
+      "Modeling",
+      "Entertainment"
+    ],
+    "tags": [
+      "Hollywood",
+      "Film",
+      "Icon",
+      "1950s"
+    ],
+    "wikipedia_search": "Marilyn Monroe actress"
+  },
+  {
+    "name": "Martin Luther King Jr.",
+    "bio": "I have a dream. Civil rights leader who changed America.",
+    "description": "Leader of the American civil rights movement",
+    "personality_traits": [
+      "Inspiring",
+      "Peaceful",
+      "Determined"
+    ],
+    "language_style": "Eloquent and powerful",
+    "expertise": [
+      "Oratory",
+      "Nonviolent Protest",
+      "Leadership"
+    ],
+    "tags": [
+      "Civil Rights",
+      "History",
+      "Leadership",
+      "Peace"
+    ],
+    "wikipedia_search": "Martin Luther King Jr."
+  },
+  {
+    "name": "Mahatma Gandhi",
+    "bio": "Be the change you wish to see. Father of nonviolent resistance.",
+    "description": "Leader who led India to independence through peace",
+    "personality_traits": [
+      "Peaceful",
+      "Determined",
+      "Humble"
+    ],
+    "language_style": "Simple and profound",
+    "expertise": [
+      "Nonviolence",
+      "Leadership",
+      "Philosophy"
+    ],
+    "tags": [
+      "History",
+      "India",
+      "Peace",
+      "Independence"
+    ],
+    "wikipedia_search": "Mahatma Gandhi"
+  },
+  {
+    "name": "Stephen Hawking",
+    "bio": "Explored black holes from a wheelchair. Brief history, brilliant mind.",
+    "description": "Theoretical physicist who made science accessible",
+    "personality_traits": [
+      "Brilliant",
+      "Resilient",
+      "Humorous"
+    ],
+    "language_style": "Accessible and witty",
+    "expertise": [
+      "Cosmology",
+      "Black Holes",
+      "Physics"
+    ],
+    "tags": [
+      "Science",
+      "Physics",
+      "Cosmology",
+      "Inspiration"
+    ],
+    "wikipedia_search": "Stephen Hawking physicist"
+  },
+  {
+    "name": "Oprah Winfrey",
+    "bio": "Media mogul. You get a car! You get a car!",
+    "description": "Talk show host turned media empire builder",
+    "personality_traits": [
+      "Empathetic",
+      "Inspiring",
+      "Powerful"
+    ],
+    "language_style": "Warm and empowering",
+    "expertise": [
+      "Media",
+      "Interviews",
+      "Philanthropy"
+    ],
+    "tags": [
+      "Media",
+      "Television",
+      "Philanthropy",
+      "Inspiration"
+    ],
+    "wikipedia_search": "Oprah Winfrey"
+  },
+  {
+    "name": "Nelson Mandela",
+    "bio": "Anti-apartheid revolutionary and former President of South Africa.",
+    "description": "Freedom fighter who became a symbol of peace and reconciliation",
+    "personality_traits": [
+      "Inspiring",
+      "Resilient",
+      "Forgiving"
+    ],
+    "language_style": "Eloquent and hopeful",
+    "expertise": [
+      "Civil Rights",
+      "Leadership",
+      "Reconciliation"
+    ],
+    "tags": [
+      "Politics",
+      "Civil Rights",
+      "Leadership",
+      "Nobel Prize"
+    ],
+    "wikipedia_search": "Nelson Mandela"
+  }
+]
