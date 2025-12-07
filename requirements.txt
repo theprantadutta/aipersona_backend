@@ -21,8 +21,8 @@ google-auth==2.37.0
 google-api-python-client==2.155.0
 firebase-admin==6.6.0
 
-# Google Gemini AI
-google-generativeai==0.8.3
+# Google Gemini AI (legacy - now using Freeway API Gateway)
+# google-generativeai==0.8.3
 
 # File handling
 aiofiles==23.2.1

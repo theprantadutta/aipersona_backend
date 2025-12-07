@@ -49,9 +49,14 @@ class Settings(BaseSettings):
     GOOGLE_WEB_CLIENT_ID: str
     FCM_CREDENTIALS_PATH: str = "firebase-admin-sdk.json"
 
-    # Google Gemini AI
-    GEMINI_API_KEY: str
+    # Google Gemini AI (legacy - kept for reference)
+    GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-1.5-flash"
+
+    # Freeway AI Gateway
+    FREEWAY_API_URL: str = "https://freeway.pranta.dev"
+    FREEWAY_API_KEY: str = ""
+    FREEWAY_MODEL: str = "free"  # "free" or "paid"
 
     # Google Play
     GOOGLE_PLAY_SERVICE_ACCOUNT_PATH: str = "google-play-service-account.json"

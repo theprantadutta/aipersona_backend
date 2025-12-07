@@ -1,5 +1,5 @@
-"""Gemini AI Service for generating responses"""
-import google.generativeai as genai
+"""AI Service for generating responses via Freeway API Gateway"""
+import httpx
 from app.config import settings
 from app.models.persona import Persona, KnowledgeBase
 from app.models.user import User, UsageTracking
@@ -11,16 +11,18 @@ import json
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini API
-genai.configure(api_key=settings.GEMINI_API_KEY)
-
 
 class GeminiService:
-    """Service for interacting with Google Gemini AI"""
+    """
+    Service for interacting with AI via Freeway API Gateway.
+    Named GeminiService for backward compatibility, but now uses Freeway.
+    """
 
     def __init__(self, db: Session):
         self.db = db
-        self.model = genai.GenerativeModel(settings.GEMINI_MODEL)
+        self.api_url = settings.FREEWAY_API_URL
+        self.api_key = settings.FREEWAY_API_KEY
+        self.model = settings.FREEWAY_MODEL  # "free" or "paid"
 
     def _build_system_prompt(self, persona: Persona, knowledge_bases: List[KnowledgeBase]) -> str:
         """
@@ -70,18 +72,17 @@ class GeminiService:
         limit: int = 20
     ) -> List[Dict[str, str]]:
         """
-        Build conversation history from chat messages
-        Limit to recent messages to avoid token limits
+        Build conversation history from chat messages in OpenAI format
         """
         # Get recent messages (sorted by created_at)
         recent_messages = sorted(messages, key=lambda x: x.created_at)[-limit:]
 
         history = []
         for msg in recent_messages:
-            role = "user" if msg.sender_type == "user" else "model"
+            role = "user" if msg.sender_type == "user" else "assistant"
             history.append({
                 "role": role,
-                "parts": [msg.text]
+                "content": msg.text
             })
 
         return history
@@ -131,7 +132,7 @@ class GeminiService:
         max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Generate AI response using Gemini
+        Generate AI response using Freeway API Gateway
 
         Args:
             user_id: User making the request
@@ -182,38 +183,43 @@ class GeminiService:
             # Build system prompt
             system_prompt = self._build_system_prompt(persona, knowledge_bases)
 
-            # Build conversation history
+            # Build conversation history in OpenAI format
             history = self._build_conversation_history(conversation_history)
 
-            # Prepare generation config
-            generation_config = {
+            # Build messages array for OpenAI-compatible API
+            messages = [
+                {"role": "system", "content": system_prompt}
+            ]
+            messages.extend(history)
+            messages.append({"role": "user", "content": user_message})
+
+            # Prepare request payload
+            payload = {
+                "model": self.model,
+                "messages": messages,
                 "temperature": temperature,
-                "top_p": 0.95,
-                "top_k": 40,
             }
             if max_tokens:
-                generation_config["max_output_tokens"] = max_tokens
+                payload["max_tokens"] = max_tokens
 
-            # Start chat with history
-            chat = self.model.start_chat(history=history)
+            # Make request to Freeway API
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                response = await client.post(
+                    f"{self.api_url}/chat/completions",
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Api-Key": self.api_key
+                    },
+                    json=payload
+                )
+                response.raise_for_status()
+                result = response.json()
 
-            # Generate response with system prompt prepended to first message
-            if not history:
-                # First message, include system prompt
-                full_message = f"{system_prompt}\n\nUser: {user_message}"
-            else:
-                full_message = user_message
+            # Extract response text from OpenAI format
+            response_text = result["choices"][0]["message"]["content"]
 
-            response = chat.send_message(
-                full_message,
-                generation_config=genai.types.GenerationConfig(**generation_config)
-            )
-
-            # Extract response text
-            response_text = response.text
-
-            # Estimate tokens (rough approximation: 1 token ≈ 4 chars)
-            tokens_used = len(response_text) // 4
+            # Get token usage from response
+            tokens_used = result.get("usage", {}).get("total_tokens", len(response_text) // 4)
 
             # Perform simple sentiment analysis
             sentiment = self._analyze_sentiment(response_text)
@@ -235,6 +241,9 @@ class GeminiService:
                 }
             }
 
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Freeway API error: {e.response.status_code} - {e.response.text}")
+            raise
         except Exception as e:
             logger.error(f"Error generating response: {str(e)}")
             raise
@@ -270,7 +279,7 @@ class GeminiService:
         temperature: float = 0.9
     ) -> AsyncIterator[str]:
         """
-        Generate streaming AI response using Gemini
+        Generate streaming AI response using Freeway API
         Yields response chunks as they arrive
         """
         try:
@@ -309,34 +318,49 @@ class GeminiService:
             system_prompt = self._build_system_prompt(persona, knowledge_bases)
             history = self._build_conversation_history(conversation_history)
 
-            # Generation config
-            generation_config = {
+            # Build messages array
+            messages = [
+                {"role": "system", "content": system_prompt}
+            ]
+            messages.extend(history)
+            messages.append({"role": "user", "content": user_message})
+
+            # Prepare request payload with streaming
+            payload = {
+                "model": self.model,
+                "messages": messages,
                 "temperature": temperature,
-                "top_p": 0.95,
-                "top_k": 40,
+                "stream": True
             }
 
-            # Start chat
-            chat = self.model.start_chat(history=history)
-
-            # Prepare message
-            if not history:
-                full_message = f"{system_prompt}\n\nUser: {user_message}"
-            else:
-                full_message = user_message
-
-            # Stream response
+            # Stream response from Freeway API
             full_response = ""
-            response_stream = chat.send_message(
-                full_message,
-                generation_config=genai.types.GenerationConfig(**generation_config),
-                stream=True
-            )
-
-            for chunk in response_stream:
-                if chunk.text:
-                    full_response += chunk.text
-                    yield json.dumps({"chunk": chunk.text})
+            async with httpx.AsyncClient(timeout=60.0) as client:
+                async with client.stream(
+                    "POST",
+                    f"{self.api_url}/chat/completions",
+                    headers={
+                        "Content-Type": "application/json",
+                        "X-Api-Key": self.api_key
+                    },
+                    json=payload
+                ) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if line.startswith("data: "):
+                            data = line[6:]
+                            if data == "[DONE]":
+                                break
+                            try:
+                                chunk_data = json.loads(data)
+                                if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                                    delta = chunk_data["choices"][0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        full_response += content
+                                        yield json.dumps({"chunk": content})
+                            except json.JSONDecodeError:
+                                continue
 
             # After streaming complete, update usage
             tokens_used = len(full_response) // 4
