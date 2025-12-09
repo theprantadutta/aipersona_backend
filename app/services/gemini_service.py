@@ -122,6 +122,38 @@ class GeminiService:
         usage.gemini_tokens_used_total += tokens_used
         self.db.commit()
 
+    async def _make_freeway_request(
+        self,
+        payload: Dict[str, Any],
+        model: str
+    ) -> Dict[str, Any]:
+        """
+        Make a request to Freeway API with the specified model.
+
+        Args:
+            payload: The request payload (will be modified with the model)
+            model: The model to use ("free" or "paid")
+
+        Returns:
+            The API response as a dict
+
+        Raises:
+            httpx.HTTPStatusError: If the request fails
+        """
+        request_payload = {**payload, "model": model}
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{self.api_url}/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Api-Key": self.api_key
+                },
+                json=request_payload
+            )
+            response.raise_for_status()
+            return response.json()
+
     async def generate_response(
         self,
         user_id: str,
@@ -132,7 +164,10 @@ class GeminiService:
         max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Generate AI response using Freeway API Gateway
+        Generate AI response using Freeway API Gateway.
+
+        If the primary model (usually "free") fails, automatically falls back
+        to the "paid" model to ensure reliability.
 
         Args:
             user_id: User making the request
@@ -193,27 +228,43 @@ class GeminiService:
             messages.extend(history)
             messages.append({"role": "user", "content": user_message})
 
-            # Prepare request payload
+            # Prepare base request payload (without model - will be added per request)
             payload = {
-                "model": self.model,
                 "messages": messages,
                 "temperature": temperature,
             }
             if max_tokens:
                 payload["max_tokens"] = max_tokens
 
-            # Make request to Freeway API
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    f"{self.api_url}/chat/completions",
-                    headers={
-                        "Content-Type": "application/json",
-                        "X-Api-Key": self.api_key
-                    },
-                    json=payload
-                )
-                response.raise_for_status()
-                result = response.json()
+            # Try primary model first, fallback to paid if it fails
+            primary_model = self.model  # Usually "free"
+            fallback_model = "paid" if primary_model == "free" else "free"
+            used_model = primary_model
+
+            try:
+                logger.info(f"Attempting request with primary model: {primary_model}")
+                result = await self._make_freeway_request(payload, primary_model)
+            except httpx.HTTPStatusError as e:
+                # Only fallback on server errors (5xx) or service unavailable
+                if e.response.status_code >= 500 or e.response.status_code == 503:
+                    logger.warning(
+                        f"Primary model '{primary_model}' failed with {e.response.status_code}, "
+                        f"falling back to '{fallback_model}'"
+                    )
+                    try:
+                        result = await self._make_freeway_request(payload, fallback_model)
+                        used_model = fallback_model
+                        logger.info(f"Fallback to '{fallback_model}' succeeded")
+                    except httpx.HTTPStatusError as fallback_error:
+                        # Both models failed, raise the fallback error
+                        logger.error(
+                            f"Fallback model '{fallback_model}' also failed: "
+                            f"{fallback_error.response.status_code} - {fallback_error.response.text}"
+                        )
+                        raise fallback_error
+                else:
+                    # Non-server errors (4xx) should not trigger fallback
+                    raise
 
             # Extract response text from OpenAI format
             response_text = result["choices"][0]["message"]["content"]
@@ -235,6 +286,7 @@ class GeminiService:
                 "response": response_text,
                 "tokens_used": tokens_used,
                 "sentiment": sentiment,
+                "model_used": used_model,  # Include which model was actually used
                 "usage": {
                     "messages_today": usage.messages_today,
                     "limit": settings.FREE_TIER_MESSAGE_LIMIT if not user.is_premium else None
@@ -270,6 +322,53 @@ class GeminiService:
         else:
             return "neutral"
 
+    async def _stream_from_freeway(
+        self,
+        payload: Dict[str, Any],
+        model: str
+    ) -> AsyncIterator[tuple[str, bool]]:
+        """
+        Stream response from Freeway API with the specified model.
+
+        Args:
+            payload: The request payload (will be modified with the model)
+            model: The model to use ("free" or "paid")
+
+        Yields:
+            Tuple of (content_chunk, is_error)
+            If is_error is True, content_chunk contains error info
+
+        Raises:
+            httpx.HTTPStatusError: If the request fails before streaming starts
+        """
+        request_payload = {**payload, "model": model, "stream": True}
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            async with client.stream(
+                "POST",
+                f"{self.api_url}/chat/completions",
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Api-Key": self.api_key
+                },
+                json=request_payload
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            break
+                        try:
+                            chunk_data = json.loads(data)
+                            if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                                delta = chunk_data["choices"][0].get("delta", {})
+                                content = delta.get("content", "")
+                                if content:
+                                    yield content, False
+                        except json.JSONDecodeError:
+                            continue
+
     async def generate_streaming_response(
         self,
         user_id: str,
@@ -279,8 +378,10 @@ class GeminiService:
         temperature: float = 0.9
     ) -> AsyncIterator[str]:
         """
-        Generate streaming AI response using Freeway API
-        Yields response chunks as they arrive
+        Generate streaming AI response using Freeway API.
+
+        If the primary model fails, automatically falls back to the paid model.
+        Yields response chunks as they arrive.
         """
         try:
             # Similar setup as generate_response
@@ -325,42 +426,50 @@ class GeminiService:
             messages.extend(history)
             messages.append({"role": "user", "content": user_message})
 
-            # Prepare request payload with streaming
+            # Prepare base request payload (without model and stream - will be added per request)
             payload = {
-                "model": self.model,
                 "messages": messages,
                 "temperature": temperature,
-                "stream": True
             }
 
-            # Stream response from Freeway API
+            # Try primary model first, fallback to paid if it fails
+            primary_model = self.model  # Usually "free"
+            fallback_model = "paid" if primary_model == "free" else "free"
+            used_model = primary_model
+
+            # Stream response from Freeway API with fallback
             full_response = ""
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                async with client.stream(
-                    "POST",
-                    f"{self.api_url}/chat/completions",
-                    headers={
-                        "Content-Type": "application/json",
-                        "X-Api-Key": self.api_key
-                    },
-                    json=payload
-                ) as response:
-                    response.raise_for_status()
-                    async for line in response.aiter_lines():
-                        if line.startswith("data: "):
-                            data = line[6:]
-                            if data == "[DONE]":
-                                break
-                            try:
-                                chunk_data = json.loads(data)
-                                if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
-                                    delta = chunk_data["choices"][0].get("delta", {})
-                                    content = delta.get("content", "")
-                                    if content:
-                                        full_response += content
-                                        yield json.dumps({"chunk": content})
-                            except json.JSONDecodeError:
-                                continue
+
+            try:
+                logger.info(f"Attempting streaming request with primary model: {primary_model}")
+                async for content, _ in self._stream_from_freeway(payload, primary_model):
+                    full_response += content
+                    yield json.dumps({"chunk": content})
+            except httpx.HTTPStatusError as e:
+                # Only fallback on server errors (5xx)
+                if e.response.status_code >= 500:
+                    logger.warning(
+                        f"Primary model '{primary_model}' failed with {e.response.status_code}, "
+                        f"falling back to '{fallback_model}'"
+                    )
+                    # Reset full_response for fallback
+                    full_response = ""
+                    try:
+                        async for content, _ in self._stream_from_freeway(payload, fallback_model):
+                            full_response += content
+                            yield json.dumps({"chunk": content})
+                        used_model = fallback_model
+                        logger.info(f"Fallback to '{fallback_model}' succeeded")
+                    except httpx.HTTPStatusError as fallback_error:
+                        logger.error(
+                            f"Fallback model '{fallback_model}' also failed: "
+                            f"{fallback_error.response.status_code}"
+                        )
+                        yield json.dumps({"error": f"Both models failed: {str(fallback_error)}"})
+                        return
+                else:
+                    yield json.dumps({"error": str(e)})
+                    return
 
             # After streaming complete, update usage
             tokens_used = len(full_response) // 4
@@ -374,7 +483,8 @@ class GeminiService:
             yield json.dumps({
                 "done": True,
                 "tokens_used": tokens_used,
-                "sentiment": self._analyze_sentiment(full_response)
+                "sentiment": self._analyze_sentiment(full_response),
+                "model_used": used_model
             })
 
         except Exception as e:
