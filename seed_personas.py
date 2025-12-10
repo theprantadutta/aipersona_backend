@@ -34,10 +34,22 @@ from app.config import settings
 # Constants
 PERSONAS_JSON_PATH = Path(__file__).parent / "personas_data.json"
 PERSONA_IMAGES_DIR = Path(__file__).parent / "persona_images"
+
+# Gemini API Configuration (primary)
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+GEMINI_API_KEY = settings.GEMINI_API_KEY
+GEMINI_MODEL = settings.GEMINI_MODEL
+
+# Freeway API Configuration (fallback - OpenAI-compatible gateway)
+FREEWAY_API_URL = settings.FREEWAY_API_URL
+FREEWAY_API_KEY = settings.FREEWAY_API_KEY
 
 # Rate limiting
-REQUEST_DELAY = 1.5  # Seconds between API requests to avoid rate limiting
+REQUEST_DELAY = 5  # Seconds between API requests to avoid rate limiting
+
+# Retry configuration for API rate limits
+RETRY_DELAYS = [60, 180, 300]  # 1 minute, 3 minutes, 5 minutes
+RATE_LIMIT_STATUS_CODES = [429, 503, 500]  # Status codes that trigger retry
 
 
 def load_personas_data() -> list[dict]:
@@ -91,14 +103,112 @@ def get_or_create_admin_user(db):
     return user
 
 
-async def get_wikipedia_url_from_gemini(
+def is_rate_limit_error(response) -> bool:
+    """Check if the response indicates a rate limit error"""
+    if response.status_code in RATE_LIMIT_STATUS_CODES:
+        return True
+
+    # Check for rate limit messages in response body
+    try:
+        response_data = response.json()
+        error_message = str(response_data.get("error", {}).get("message", "")).lower()
+        if any(term in error_message for term in ["rate limit", "quota", "resource exhausted", "too many requests"]):
+            return True
+    except:
+        pass
+
+    return False
+
+
+def format_wait_time(seconds: int) -> str:
+    """Format seconds into a human-readable string"""
+    if seconds >= 60:
+        minutes = seconds // 60
+        return f"{minutes} minute{'s' if minutes > 1 else ''}"
+    return f"{seconds} second{'s' if seconds > 1 else ''}"
+
+
+async def make_gemini_request(
+    client: httpx.AsyncClient,
+    prompt: str,
+    temperature: float = 0.1,
+    max_tokens: int = 256
+) -> httpx.Response:
+    """
+    Make a request to Gemini API.
+
+    Args:
+        client: httpx async client
+        prompt: The prompt text
+        temperature: Creativity level
+        max_tokens: Maximum tokens in response
+
+    Returns:
+        httpx Response object
+    """
+    request_body = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens
+        }
+    }
+
+    api_url = GEMINI_API_URL.format(model=GEMINI_MODEL) + f"?key={GEMINI_API_KEY}"
+
+    response = await client.post(api_url, json=request_body, timeout=60.0)
+    return response
+
+
+async def make_freeway_request(
+    client: httpx.AsyncClient,
+    messages: list,
+    model: str = "paid",
+    temperature: float = 0.1,
+    max_tokens: int = 256
+) -> httpx.Response:
+    """
+    Make a request to Freeway API (OpenAI-compatible).
+
+    Args:
+        client: httpx async client
+        messages: List of message dicts with role and content
+        model: Model to use ("free" or "paid")
+        temperature: Creativity level
+        max_tokens: Maximum tokens in response
+
+    Returns:
+        httpx Response object
+    """
+    request_body = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
+
+    response = await client.post(
+        f"{FREEWAY_API_URL}/chat/completions",
+        headers={
+            "Content-Type": "application/json",
+            "X-Api-Key": FREEWAY_API_KEY
+        },
+        json=request_body,
+        timeout=60.0
+    )
+
+    return response
+
+
+async def get_wikipedia_url(
     client: httpx.AsyncClient,
     persona_name: str,
     persona_bio: str,
     search_hint: str
 ) -> Optional[str]:
     """
-    Uses the Gemini API to find and verify an English Wikipedia URL for a given persona.
+    Gets Wikipedia URL using Gemini first, falls back to Freeway paid model if Gemini fails.
+    Implements progressive backoff retry on rate limit errors.
 
     Args:
         client: httpx async client
@@ -111,61 +221,190 @@ async def get_wikipedia_url_from_gemini(
     """
     print(f"  [WIKI] Searching Wikipedia URL for: {persona_name}")
 
-    # Step 1: Ask Gemini for the URL
+    # Build the prompt
     prompt = (
-        f"You are a helpful research assistant. Your task is to find the official English Wikipedia page URL for a given person or character. "
-        f"The name is '{persona_name}' and their description is '{persona_bio}'. "
-        f"Additional search context: '{search_hint}'. "
-        f"Search Wikipedia for this person/character. If you find a direct and exact match, respond ONLY with the full URL (e.g., https://en.wikipedia.org/wiki/...). "
-        f"Do not include any other text, explanation, or formatting. Just the URL. "
-        f"If you are not certain, if no page exists, respond with the single word: null"
+        f"You are a helpful research assistant. Your task is to find the official English Wikipedia page URL "
+        f"for a given person or character. If you find a direct and exact match, respond ONLY with the full URL "
+        f"(e.g., https://en.wikipedia.org/wiki/...). Do not include any other text, explanation, or formatting. "
+        f"Just the URL. If you are not certain or no page exists, respond with the single word: null\n\n"
+        f"Find the Wikipedia URL for: '{persona_name}'\n"
+        f"Description: {persona_bio}\n"
+        f"Additional context: {search_hint}"
     )
 
-    request_body = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 256
-        }
-    }
+    # For Freeway (OpenAI format)
+    messages = [
+        {"role": "system", "content": "You are a helpful research assistant. Your task is to find the official English Wikipedia page URL for a given person or character. If you find a direct and exact match, respond ONLY with the full URL (e.g., https://en.wikipedia.org/wiki/...). Do not include any other text, explanation, or formatting. Just the URL. If you are not certain or no page exists, respond with the single word: null"},
+        {"role": "user", "content": f"Find the Wikipedia URL for: '{persona_name}'\nDescription: {persona_bio}\nAdditional context: {search_hint}"}
+    ]
 
-    try:
-        api_url = GEMINI_API_URL.format(model=settings.GEMINI_MODEL) + f"?key={settings.GEMINI_API_KEY}"
-        response = await client.post(api_url, json=request_body, timeout=30.0)
+    # Track retry attempts
+    attempt = 0
+    max_attempts = len(RETRY_DELAYS) + 1  # Initial attempt + retries
+    use_freeway = False  # Start with Gemini
 
-        if response.status_code != 200:
-            print(f"  [WARN] Gemini API request failed with status: {response.status_code}")
-            return None
+    while attempt < max_attempts:
+        try:
+            if not use_freeway:
+                # Try Gemini first
+                print(f"  [API] Attempting with Gemini ({GEMINI_MODEL})")
+                response = await make_gemini_request(client, prompt)
 
-        response_data = response.json()
-        potential_url = (
-            response_data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
-            .strip()
-        )
+                # Check for rate limit errors
+                if is_rate_limit_error(response):
+                    print(f"  [RATE LIMIT] Gemini rate limited. Trying Freeway paid model...")
+                    use_freeway = True
+                    continue
 
-    except Exception as e:
-        print(f"  [ERROR] Gemini API error: {e}")
+                # Check for server errors
+                if response.status_code >= 500:
+                    print(f"  [ERROR] Gemini returned {response.status_code}. Trying Freeway paid model...")
+                    use_freeway = True
+                    continue
+
+                # Check for other non-200 responses
+                if response.status_code != 200:
+                    print(f"  [WARN] Gemini request failed with status: {response.status_code}. Trying Freeway paid model...")
+                    use_freeway = True
+                    continue
+
+                # Parse Gemini response
+                response_data = response.json()
+                potential_url = (
+                    response_data.get("candidates", [{}])[0]
+                    .get("content", {})
+                    .get("parts", [{}])[0]
+                    .get("text", "")
+                    .strip()
+                )
+
+                print(f"  [OK] Response received from Gemini")
+
+            else:
+                # Fallback to Freeway paid model
+                print(f"  [API] Attempting with Freeway (paid)")
+                response = await make_freeway_request(client, messages, "paid")
+
+                # Check for rate limit errors
+                if is_rate_limit_error(response):
+                    if attempt < len(RETRY_DELAYS):
+                        wait_time = RETRY_DELAYS[attempt]
+                        print(f"  [RATE LIMIT] Freeway API rate limit hit. Waiting {format_wait_time(wait_time)} before retry...")
+                        print(f"  [RATE LIMIT] Retry attempt {attempt + 1}/{len(RETRY_DELAYS)}")
+                        await asyncio.sleep(wait_time)
+                        attempt += 1
+                        use_freeway = False  # Try Gemini again after waiting
+                        continue
+                    else:
+                        print(f"  [RATE LIMIT] All retry attempts exhausted after progressive backoff (1min, 3min, 5min)")
+                        print(f"  [RATE LIMIT] Assigning null image for: {persona_name}")
+                        return None
+
+                # Check for server errors
+                if response.status_code >= 500:
+                    if attempt < len(RETRY_DELAYS):
+                        wait_time = RETRY_DELAYS[attempt]
+                        print(f"  [ERROR] Server error {response.status_code}. Waiting {format_wait_time(wait_time)} before retry...")
+                        await asyncio.sleep(wait_time)
+                        attempt += 1
+                        use_freeway = False
+                        continue
+                    else:
+                        print(f"  [WARN] Freeway API request failed with status: {response.status_code}")
+                        return None
+
+                # Check for other non-200 responses
+                if response.status_code != 200:
+                    print(f"  [WARN] Freeway API request failed with status: {response.status_code}")
+                    try:
+                        error_detail = response.json()
+                        print(f"  [WARN] Error details: {error_detail}")
+                    except:
+                        pass
+                    return None
+
+                # Parse OpenAI-compatible response
+                response_data = response.json()
+                potential_url = (
+                    response_data.get("choices", [{}])[0]
+                    .get("message", {})
+                    .get("content", "")
+                    .strip()
+                )
+
+                print(f"  [OK] Response received from Freeway (paid)")
+
+            # Successfully got a response, break out of retry loop
+            break
+
+        except httpx.TimeoutException:
+            print(f"  [TIMEOUT] API request timed out")
+            if not use_freeway:
+                print(f"  [TIMEOUT] Trying Freeway paid model...")
+                use_freeway = True
+                continue
+
+            if attempt < len(RETRY_DELAYS):
+                wait_time = RETRY_DELAYS[attempt]
+                print(f"  [TIMEOUT] Waiting {format_wait_time(wait_time)} before retry...")
+                await asyncio.sleep(wait_time)
+                attempt += 1
+                use_freeway = False
+                continue
+            else:
+                print(f"  [TIMEOUT] All retry attempts exhausted")
+                return None
+
+        except Exception as e:
+            error_str = str(e).lower()
+            # Check if it's a rate limit error in exception message
+            if any(term in error_str for term in ["rate limit", "quota", "resource exhausted", "429"]):
+                if not use_freeway:
+                    print(f"  [RATE LIMIT] Trying Freeway paid model...")
+                    use_freeway = True
+                    continue
+
+                if attempt < len(RETRY_DELAYS):
+                    wait_time = RETRY_DELAYS[attempt]
+                    print(f"  [RATE LIMIT] API rate limit detected. Waiting {format_wait_time(wait_time)} before retry...")
+                    print(f"  [RATE LIMIT] Retry attempt {attempt + 1}/{len(RETRY_DELAYS)}")
+                    await asyncio.sleep(wait_time)
+                    attempt += 1
+                    use_freeway = False
+                    continue
+                else:
+                    print(f"  [RATE LIMIT] All retry attempts exhausted after progressive backoff")
+                    return None
+            else:
+                print(f"  [ERROR] API error: {e}")
+                if not use_freeway:
+                    print(f"  [ERROR] Trying Freeway paid model...")
+                    use_freeway = True
+                    continue
+                return None
+    else:
+        # Loop completed without breaking (all retries exhausted)
+        print(f"  [ERROR] All retry attempts exhausted for: {persona_name}")
         return None
 
-    # Step 2: Verify the URL
+    # Verify the URL
     if not potential_url or potential_url.lower() == "null":
-        print(f"  [WARN] Gemini did not find a Wikipedia URL for {persona_name}")
+        print(f"  [WARN] AI did not find a Wikipedia URL for {persona_name}")
         return None
 
     # Clean up the URL (remove any markdown or extra characters)
     potential_url = potential_url.strip('`').strip()
+
+    # Handle markdown link format [text](url)
+    if potential_url.startswith('[') and '](' in potential_url:
+        potential_url = potential_url.split('](')[-1].rstrip(')')
 
     # Basic check for valid Wikipedia URL
     if not potential_url.startswith("https://en.wikipedia.org/wiki/"):
         print(f"  [WARN] Invalid URL format for {persona_name}: {potential_url}")
         return None
 
-    # Skip URL verification - we'll validate by trying to get the image from Wikipedia API
-    # Wikipedia blocks direct requests, but the API works fine
-    print(f"  [OK] Got Wikipedia URL from Gemini: {potential_url}")
+    print(f"  [OK] Got Wikipedia URL: {potential_url}")
     return potential_url
 
 
@@ -313,8 +552,8 @@ async def process_persona_image(
 
     print(f"\n[PROCESSING] {persona_name}")
 
-    # Step 1: Get Wikipedia URL from Gemini
-    wiki_url = await get_wikipedia_url_from_gemini(client, persona_name, persona_bio, search_hint)
+    # Step 1: Get Wikipedia URL (Gemini first, fallback to Freeway paid)
+    wiki_url = await get_wikipedia_url(client, persona_name, persona_bio, search_hint)
 
     if not wiki_url:
         print(f"  [SKIP] Could not find Wikipedia URL")
@@ -481,7 +720,8 @@ async def main_async():
 
         # Step 3: Process personas
         print("Step 3: Processing personas (fetching Wikipedia images)...")
-        print(f"[INFO] Using Gemini model: {settings.GEMINI_MODEL}")
+        print(f"[INFO] Primary: Gemini ({GEMINI_MODEL})")
+        print(f"[INFO] Fallback: Freeway API (paid) - {FREEWAY_API_URL}")
         print()
 
         created_count = 0
