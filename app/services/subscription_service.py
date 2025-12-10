@@ -22,45 +22,53 @@ class SubscriptionService:
         "free": {
             "name": "Free",
             "description": "Get started with basic AI persona features",
-            "messages_per_day": 50,
-            "personas_limit": 2,
-            "storage_mb": 100,
+            "messages_per_day": 25,
+            "personas_limit": 3,
+            "storage_mb": 50,
+            "history_days": 3,
             "features": [
-                "50 messages per day",
-                "2 custom personas",
-                "Basic chat features",
-                "100MB storage",
-                "Text export only"
+                "25 messages per day",
+                "3 custom personas",
+                "3-day chat history",
+                "50MB storage",
+                "Text export only",
+                "No voice features"
             ]
         },
         "basic": {
             "name": "Basic",
             "description": "Enhanced features for regular users",
-            "messages_per_day": 500,
-            "personas_limit": 10,
-            "storage_mb": 1024,
+            "messages_per_day": 200,
+            "personas_limit": 15,
+            "storage_mb": 500,
+            "history_days": 30,
             "features": [
-                "500 messages per day",
-                "10 custom personas",
-                "1GB storage",
-                "Voice features",
-                "PDF export",
+                "200 messages per day",
+                "15 custom personas",
+                "30-day chat history",
+                "500MB storage",
+                "Voice input",
+                "Text & PDF export",
+                "Persona cloning",
                 "Email support"
             ]
         },
         "premium": {
             "name": "Premium",
             "description": "Advanced features for power users",
-            "messages_per_day": 2000,
+            "messages_per_day": 1000,
             "personas_limit": 50,
-            "storage_mb": 5120,
+            "storage_mb": 2048,
+            "history_days": 90,
             "features": [
-                "2,000 messages per day",
+                "1,000 messages per day",
                 "50 custom personas",
-                "5GB storage",
-                "Premium voice packs",
+                "90-day chat history",
+                "2GB storage",
+                "Voice input & output (TTS)",
                 "All export formats",
-                "Analytics dashboard",
+                "Priority response",
+                "Full analytics",
                 "Priority support"
             ]
         },
@@ -69,17 +77,18 @@ class SubscriptionService:
             "description": "Professional tier with unlimited usage",
             "messages_per_day": -1,  # Unlimited
             "personas_limit": -1,  # Unlimited
-            "storage_mb": 20480,
+            "storage_mb": 10240,
+            "history_days": -1,  # Unlimited
             "features": [
                 "Unlimited messages",
                 "Unlimited personas",
-                "20GB storage",
-                "Custom AI model training",
-                "Team collaboration (up to 5)",
-                "API access",
-                "White-label options",
-                "Dedicated support",
-                "Early access to new features"
+                "Unlimited chat history",
+                "10GB storage",
+                "All voice features",
+                "All export formats",
+                "Priority response",
+                "Full analytics + API access",
+                "Dedicated support"
             ]
         }
     }

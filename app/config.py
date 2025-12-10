@@ -85,9 +85,10 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str = "AI Persona"
 
     # Free Tier Limits
-    FREE_TIER_MESSAGE_LIMIT: int = 10
-    FREE_TIER_PERSONA_LIMIT: int = 2
-    FREE_TIER_HISTORY_DAYS: int = 7
+    FREE_TIER_MESSAGE_LIMIT: int = 25
+    FREE_TIER_PERSONA_LIMIT: int = 3
+    FREE_TIER_HISTORY_DAYS: int = 3
+    FREE_TIER_STORAGE_MB: int = 50
 
     # Subscription Settings
     GRACE_PERIOD_DAYS: int = 3
