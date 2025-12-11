@@ -68,19 +68,35 @@ class GeminiService:
                     prompt_parts.append(f"\n--- {kb.source_name or kb.source_type} ---")
                     prompt_parts.append(kb.content)
 
-        # Final instruction
-        prompt_parts.append("\nRespond to the user's messages while staying in character and using the knowledge provided above.")
+        # Final instruction with length optimization
+        prompt_parts.append("""
+RESPONSE GUIDELINES:
+- Keep responses concise and conversational - typically 1-3 short paragraphs
+- Get to the point quickly without unnecessary preamble or filler
+- Only give longer, detailed responses when:
+  * The user explicitly asks for more detail, explanation, or elaboration
+  * The topic genuinely requires thorough explanation (complex questions, tutorials, etc.)
+  * You're telling a story or creative content the user requested
+- Avoid repetition, excessive qualifiers, and verbose language
+- Don't pad responses with unnecessary pleasantries or restatements
+- Stay in character while being efficient with words
+
+Respond to the user's messages while staying in character and using the knowledge provided above.""")
 
         return "\n\n".join(prompt_parts)
 
     def _build_conversation_history(
         self,
         messages: List[ChatMessage],
-        limit: int = 20
+        limit: int = None
     ) -> List[Dict[str, str]]:
         """
         Build conversation history from chat messages in OpenAI format
         """
+        # Use config default if not specified
+        if limit is None:
+            limit = settings.AI_MAX_CONVERSATION_HISTORY
+
         # Get recent messages (sorted by created_at)
         recent_messages = sorted(messages, key=lambda x: x.created_at)[-limit:]
 
@@ -133,7 +149,7 @@ class GeminiService:
         self,
         system_prompt: str,
         messages: List[Dict[str, str]],
-        temperature: float = 0.9,
+        temperature: float = 0.7,
         max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """
@@ -218,7 +234,7 @@ class GeminiService:
         persona_id: str,
         user_message: str,
         conversation_history: List[ChatMessage],
-        temperature: float = 0.9,
+        temperature: Optional[float] = None,
         max_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """
@@ -259,6 +275,12 @@ class GeminiService:
                     "used": limit_check.get("used")
                 }
 
+            # Apply config defaults for token optimization
+            if temperature is None:
+                temperature = settings.AI_DEFAULT_TEMPERATURE
+            if max_tokens is None:
+                max_tokens = settings.AI_DEFAULT_MAX_TOKENS
+
             # Get persona
             persona = self.db.query(Persona).filter(Persona.id == persona_id).first()
             if not persona:
@@ -288,9 +310,8 @@ class GeminiService:
             freeway_payload = {
                 "messages": freeway_messages,
                 "temperature": temperature,
+                "max_tokens": max_tokens,
             }
-            if max_tokens:
-                freeway_payload["max_tokens"] = max_tokens
 
             # Try Gemini first, fallback to Freeway paid
             used_model = f"gemini-{self.gemini_model}"
@@ -390,7 +411,8 @@ class GeminiService:
         self,
         system_prompt: str,
         messages: List[Dict[str, str]],
-        temperature: float = 0.9
+        temperature: float = 0.7,
+        max_tokens: Optional[int] = None
     ) -> AsyncIterator[str]:
         """
         Stream response from Gemini API.
@@ -407,14 +429,16 @@ class GeminiService:
                 "parts": [{"text": msg["content"]}]
             })
 
+        generation_config = {"temperature": temperature}
+        if max_tokens:
+            generation_config["maxOutputTokens"] = max_tokens
+
         request_body = {
             "contents": contents,
             "systemInstruction": {
                 "parts": [{"text": system_prompt}]
             },
-            "generationConfig": {
-                "temperature": temperature,
-            }
+            "generationConfig": generation_config
         }
 
         api_url = GEMINI_STREAM_URL.format(model=self.gemini_model) + f"?key={self.gemini_api_key}&alt=sse"
@@ -481,7 +505,8 @@ class GeminiService:
         persona_id: str,
         user_message: str,
         conversation_history: List[ChatMessage],
-        temperature: float = 0.9
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None
     ) -> AsyncIterator[str]:
         """
         Generate streaming AI response using Gemini (primary) with Freeway paid fallback.
@@ -489,6 +514,12 @@ class GeminiService:
         Yields response chunks as they arrive.
         """
         try:
+            # Apply config defaults for token optimization
+            if temperature is None:
+                temperature = settings.AI_DEFAULT_TEMPERATURE
+            if max_tokens is None:
+                max_tokens = settings.AI_DEFAULT_MAX_TOKENS
+
             # Similar setup as generate_response
             user = self.db.query(User).filter(User.id == user_id).first()
             if not user:
@@ -536,6 +567,7 @@ class GeminiService:
             freeway_payload = {
                 "messages": freeway_messages,
                 "temperature": temperature,
+                "max_tokens": max_tokens,
             }
 
             # Try Gemini first, fallback to Freeway paid
@@ -544,7 +576,7 @@ class GeminiService:
 
             try:
                 logger.info(f"Attempting streaming request with Gemini ({self.gemini_model})")
-                async for content in self._stream_from_gemini(system_prompt, messages, temperature):
+                async for content in self._stream_from_gemini(system_prompt, messages, temperature, max_tokens):
                     full_response += content
                     yield json.dumps({"chunk": content})
 

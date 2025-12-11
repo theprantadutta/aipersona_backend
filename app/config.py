@@ -90,6 +90,11 @@ class Settings(BaseSettings):
     FREE_TIER_HISTORY_DAYS: int = 3
     FREE_TIER_STORAGE_MB: int = 50
 
+    # AI Response Optimization
+    AI_DEFAULT_MAX_TOKENS: int = 500  # Default max tokens for responses (keeps them concise)
+    AI_DEFAULT_TEMPERATURE: float = 0.7  # Lower temp = more focused, less verbose responses
+    AI_MAX_CONVERSATION_HISTORY: int = 20  # Max messages to include in context
+
     # Subscription Settings
     GRACE_PERIOD_DAYS: int = 3
 
