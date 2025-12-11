@@ -153,10 +153,16 @@ class SocialService:
 
         return favorite is not None
 
-    def get_user_favorites(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_favorites(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """
-        Get all favorited personas for a user with details
+        Get favorited personas for a user with details
         Returns list of favorited personas with creator info
+        Supports pagination with limit and offset
         """
         user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
 
@@ -174,7 +180,7 @@ class SocialService:
             Persona.status == "active"
         ).order_by(
             desc(PersonaFavorite.created_at)
-        ).all()
+        ).limit(limit).offset(offset).all()
 
         result = []
         for favorite, persona, creator in favorites:
@@ -266,9 +272,15 @@ class SocialService:
 
         return follow is not None
 
-    def get_user_followers(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_followers(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """
         Get list of users following this user
+        Supports pagination with limit and offset
         """
         user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
 
@@ -282,7 +294,7 @@ class SocialService:
             UserFollow.following_id == user_uuid
         ).order_by(
             desc(UserFollow.created_at)
-        ).all()
+        ).limit(limit).offset(offset).all()
 
         result = []
         for follow, user in followers:
@@ -296,9 +308,15 @@ class SocialService:
 
         return result
 
-    def get_user_following(self, user_id: str) -> List[Dict[str, Any]]:
+    def get_user_following(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
         """
         Get list of users this user is following
+        Supports pagination with limit and offset
         """
         user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
 
@@ -312,7 +330,7 @@ class SocialService:
             UserFollow.follower_id == user_uuid
         ).order_by(
             desc(UserFollow.created_at)
-        ).all()
+        ).limit(limit).offset(offset).all()
 
         result = []
         for follow, user in following:
@@ -414,7 +432,7 @@ class SocialService:
             "username": user.display_name,
             "email": user.email,
             "avatar_url": user.photo_url,
-            "bio": None,  # Add bio field to User model if needed
+            "bio": user.bio,  # User bio/description
             "follower_count": follower_count,
             "following_count": following_count,
             "persona_count": persona_count,

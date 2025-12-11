@@ -28,6 +28,7 @@ class User(Base):
     email_verified = Column(Boolean, default=False, nullable=False)
 
     # Profile
+    bio = Column(String(500), nullable=True)  # User bio/description, max 500 chars
     created_at = Column(DateTime, default=utc_now, nullable=False)
     last_login = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)

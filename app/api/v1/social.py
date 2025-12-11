@@ -1,5 +1,5 @@
 """Social API endpoints"""
-from fastapi import APIRouter, Depends, HTTPException, status, Path
+from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 
@@ -160,6 +160,8 @@ def check_persona_favorited(
 
 @router.get("/favorites", response_model=FavoritesListResponse)
 def get_user_favorites(
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -169,10 +171,15 @@ def get_user_favorites(
     Returns:
     - List of favorited personas with details
     - Ordered by most recently favorited
+    - Supports pagination with limit and offset
     """
     try:
         service = SocialService(db)
-        favorites_data = service.get_user_favorites(user_id=str(current_user.id))
+        favorites_data = service.get_user_favorites(
+            user_id=str(current_user.id),
+            limit=limit,
+            offset=offset
+        )
 
         favorites = [
             FavoritedPersona(
@@ -269,6 +276,8 @@ def check_user_following(
 @router.get("/users/{user_id}/followers", response_model=FollowersListResponse)
 def get_user_followers(
     user_id: str = Path(..., description="User ID"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -278,10 +287,15 @@ def get_user_followers(
     Returns:
     - List of users who follow the specified user
     - Ordered by most recent follow
+    - Supports pagination with limit and offset
     """
     try:
         service = SocialService(db)
-        followers_data = service.get_user_followers(user_id=user_id)
+        followers_data = service.get_user_followers(
+            user_id=user_id,
+            limit=limit,
+            offset=offset
+        )
 
         followers = [
             FollowerInfo(
@@ -309,6 +323,8 @@ def get_user_followers(
 @router.get("/users/{user_id}/following-list", response_model=FollowingListResponse)
 def get_user_following_list(
     user_id: str = Path(..., description="User ID"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -318,10 +334,15 @@ def get_user_following_list(
     Returns:
     - List of users that the specified user follows
     - Ordered by most recent follow
+    - Supports pagination with limit and offset
     """
     try:
         service = SocialService(db)
-        following_data = service.get_user_following(user_id=user_id)
+        following_data = service.get_user_following(
+            user_id=user_id,
+            limit=limit,
+            offset=offset
+        )
 
         following = [
             FollowerInfo(
