@@ -4,11 +4,13 @@ from sqlalchemy import or_, and_, desc
 from app.models.persona import Persona, KnowledgeBase
 from app.models.user import User, UsageTracking
 from app.models.chat import ChatSession
+from app.models.social import UserActivity
 from app.schemas.persona import PersonaCreate, PersonaUpdate, KnowledgeBaseCreate
 from app.config import settings
 from typing import List, Optional, Dict, Any
 from datetime import timedelta
 import uuid
+import json
 import logging
 
 from app.utils.time_utils import utc_now
@@ -21,6 +23,28 @@ class PersonaService:
 
     def __init__(self, db: Session):
         self.db = db
+
+    def _record_activity(
+        self,
+        user_id,
+        activity_type: str,
+        target_id: Optional[str] = None,
+        target_type: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Record user activity for the activity feed."""
+        try:
+            user_uuid = user_id if isinstance(user_id, uuid.UUID) else uuid.UUID(user_id)
+            activity = UserActivity(
+                user_id=user_uuid,
+                activity_type=activity_type,
+                target_id=target_id,
+                target_type=target_type,
+                metadata=json.dumps(metadata) if metadata else None
+            )
+            self.db.add(activity)
+        except Exception as e:
+            logger.error(f"Error recording activity: {str(e)}")
 
     def get_persona_by_id(self, persona_id: str, user_id: Optional[str] = None) -> Optional[Persona]:
         """
@@ -122,6 +146,18 @@ class PersonaService:
 
         # Update usage count
         usage.personas_count += 1
+
+        # Flush to get the persona ID before recording activity
+        self.db.flush()
+
+        # Record activity
+        self._record_activity(
+            user_id=user_id,
+            activity_type="persona_created",
+            target_id=str(persona.id),
+            target_type="persona",
+            metadata={"persona_name": persona.name, "is_public": persona.is_public}
+        )
 
         self.db.commit()
         self.db.refresh(persona)
@@ -284,6 +320,20 @@ class PersonaService:
                 meta_data=kb.meta_data
             )
             self.db.add(cloned_kb)
+
+        # Record activity for cloning
+        self._record_activity(
+            user_id=user_id,
+            activity_type="persona_cloned",
+            target_id=str(cloned_persona.id),
+            target_type="persona",
+            metadata={
+                "cloned_persona_name": cloned_persona.name,
+                "original_persona_id": str(original.id),
+                "original_persona_name": original.name,
+                "original_creator_id": str(original.creator_id) if original.creator_id else None
+            }
+        )
 
         self.db.commit()
         self.db.refresh(cloned_persona)

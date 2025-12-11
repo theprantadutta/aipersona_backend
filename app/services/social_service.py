@@ -56,6 +56,15 @@ class SocialService:
                 persona.like_count += 1
                 is_liked = True
 
+                # Record activity for liking
+                self._record_activity_internal(
+                    user_id=user_uuid,
+                    activity_type="persona_liked",
+                    target_id=str(persona_uuid),
+                    target_type="persona",
+                    metadata={"persona_name": persona.name}
+                )
+
             self.db.commit()
 
             return is_liked, persona.like_count
@@ -121,6 +130,15 @@ class SocialService:
                 )
                 self.db.add(new_favorite)
                 is_favorited = True
+
+                # Record activity for favoriting
+                self._record_activity_internal(
+                    user_id=user_uuid,
+                    activity_type="persona_favorited",
+                    target_id=str(persona_uuid),
+                    target_type="persona",
+                    metadata={"persona_name": persona.name}
+                )
 
             self.db.commit()
 
@@ -232,6 +250,15 @@ class SocialService:
                 )
                 self.db.add(new_follow)
                 is_following = True
+
+                # Record activity for following
+                self._record_activity_internal(
+                    user_id=follower_uuid,
+                    activity_type="user_followed",
+                    target_id=str(following_uuid),
+                    target_type="user",
+                    metadata={"user_name": user_to_follow.display_name or user_to_follow.email}
+                )
 
             self.db.commit()
 
@@ -761,6 +788,36 @@ class SocialService:
     # ACTIVITY FEED
     # =========================================================================
 
+    def _record_activity_internal(
+        self,
+        user_id,
+        activity_type: str,
+        target_id: Optional[str] = None,
+        target_type: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """
+        Internal helper to record activity without committing.
+        Use this within other methods that manage their own transactions.
+        """
+        try:
+            user_uuid = user_id if isinstance(user_id, uuid.UUID) else uuid.UUID(user_id)
+
+            activity = UserActivity(
+                user_id=user_uuid,
+                activity_type=activity_type,
+                target_id=target_id,
+                target_type=target_type,
+                metadata=json.dumps(metadata) if metadata else None
+            )
+
+            self.db.add(activity)
+            # Don't commit - let the caller handle the transaction
+
+        except Exception as e:
+            logger.error(f"Error recording activity internally: {str(e)}")
+            # Don't raise - activity recording is not critical
+
     def record_activity(
         self,
         user_id: str,
@@ -769,7 +826,7 @@ class SocialService:
         target_type: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> bool:
-        """Record a user activity"""
+        """Record a user activity (standalone, with commit)"""
         try:
             user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
 
