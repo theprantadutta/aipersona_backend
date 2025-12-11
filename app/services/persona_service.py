@@ -40,7 +40,7 @@ class PersonaService:
                 activity_type=activity_type,
                 target_id=target_id,
                 target_type=target_type,
-                metadata=json.dumps(metadata) if metadata else None
+                activity_data=json.dumps(metadata) if metadata else None
             )
             self.db.add(activity)
         except Exception as e:

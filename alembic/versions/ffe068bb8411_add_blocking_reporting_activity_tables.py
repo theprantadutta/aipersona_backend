@@ -65,7 +65,7 @@ def upgrade() -> None:
         sa.Column('activity_type', sa.String(50), nullable=False),
         sa.Column('target_id', sa.String(255), nullable=True),
         sa.Column('target_type', sa.String(50), nullable=True),
-        sa.Column('metadata', sa.Text(), nullable=True),
+        sa.Column('activity_data', sa.Text(), nullable=True),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')

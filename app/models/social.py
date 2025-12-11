@@ -165,7 +165,7 @@ class UserActivity(Base):
     activity_type = Column(String(50), nullable=False)  # Type of activity (enum value)
     target_id = Column(String(255), nullable=True)  # ID of the target (persona_id, user_id, etc.)
     target_type = Column(String(50), nullable=True)  # Type of target ('persona', 'user')
-    metadata = Column(Text, nullable=True)  # JSON metadata for additional context
+    activity_data = Column(Text, nullable=True)  # JSON metadata for additional context
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (

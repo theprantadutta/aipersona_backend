@@ -808,7 +808,7 @@ class SocialService:
                 activity_type=activity_type,
                 target_id=target_id,
                 target_type=target_type,
-                metadata=json.dumps(metadata) if metadata else None
+                activity_data=json.dumps(metadata) if metadata else None
             )
 
             self.db.add(activity)
@@ -835,7 +835,7 @@ class SocialService:
                 activity_type=activity_type,
                 target_id=target_id,
                 target_type=target_type,
-                metadata=json.dumps(metadata) if metadata else None
+                activity_data=json.dumps(metadata) if metadata else None
             )
 
             self.db.add(activity)
@@ -905,7 +905,7 @@ class SocialService:
                 "target_name": target_name,
                 "target_avatar": target_avatar,
                 "created_at": activity.created_at,
-                "metadata": json.loads(activity.metadata) if activity.metadata else None
+                "metadata": json.loads(activity.activity_data) if activity.activity_data else None
             })
 
         return result, total
