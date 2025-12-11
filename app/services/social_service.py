@@ -2,13 +2,14 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 from sqlalchemy.exc import IntegrityError
-from app.models.social import PersonaLike, PersonaFavorite, UserFollow, PersonaView
+from app.models.social import PersonaLike, PersonaFavorite, UserFollow, PersonaView, UserBlock, ContentReport, UserActivity
 from app.models.persona import Persona
 from app.models.user import User
 from typing import List, Optional, Tuple, Dict, Any
 from datetime import datetime
 import uuid
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -473,3 +474,381 @@ class SocialService:
             self.db.rollback()
             logger.error(f"Error recording persona view: {str(e)}")
             raise
+
+    # =========================================================================
+    # USER BLOCKING
+    # =========================================================================
+
+    def toggle_user_block(
+        self,
+        blocker_id: str,
+        blocked_id: str,
+        reason: Optional[str] = None
+    ) -> Tuple[bool, str]:
+        """
+        Toggle block on a user
+        Returns (is_blocked: bool, message: str)
+        """
+        try:
+            blocker_uuid = uuid.UUID(blocker_id) if isinstance(blocker_id, str) else blocker_id
+            blocked_uuid = uuid.UUID(blocked_id) if isinstance(blocked_id, str) else blocked_id
+
+            # Prevent self-block
+            if blocker_uuid == blocked_uuid:
+                raise ValueError("Cannot block yourself")
+
+            # Verify user to block exists
+            user_to_block = self.db.query(User).filter(User.id == blocked_uuid).first()
+            if not user_to_block:
+                raise ValueError("User not found")
+
+            # Check if block exists
+            existing_block = self.db.query(UserBlock).filter(
+                UserBlock.blocker_id == blocker_uuid,
+                UserBlock.blocked_id == blocked_uuid
+            ).first()
+
+            if existing_block:
+                # Unblock
+                self.db.delete(existing_block)
+                self.db.commit()
+                return False, "User unblocked"
+            else:
+                # Block
+                new_block = UserBlock(
+                    blocker_id=blocker_uuid,
+                    blocked_id=blocked_uuid,
+                    reason=reason
+                )
+                self.db.add(new_block)
+                self.db.commit()
+                return True, "User blocked"
+
+        except IntegrityError as e:
+            self.db.rollback()
+            logger.error(f"Integrity error toggling block: {str(e)}")
+            current_block = self.db.query(UserBlock).filter(
+                UserBlock.blocker_id == blocker_uuid,
+                UserBlock.blocked_id == blocked_uuid
+            ).first()
+            return current_block is not None, "Block status updated"
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error toggling user block: {str(e)}")
+            raise
+
+    def check_user_blocked(self, blocker_id: str, blocked_id: str) -> bool:
+        """Check if blocker has blocked the blocked user"""
+        blocker_uuid = uuid.UUID(blocker_id) if isinstance(blocker_id, str) else blocker_id
+        blocked_uuid = uuid.UUID(blocked_id) if isinstance(blocked_id, str) else blocked_id
+
+        block = self.db.query(UserBlock).filter(
+            UserBlock.blocker_id == blocker_uuid,
+            UserBlock.blocked_id == blocked_uuid
+        ).first()
+
+        return block is not None
+
+    def get_blocked_users(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """Get list of users blocked by this user"""
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+
+        blocked = self.db.query(
+            UserBlock,
+            User
+        ).join(
+            User, UserBlock.blocked_id == User.id
+        ).filter(
+            UserBlock.blocker_id == user_uuid
+        ).order_by(
+            desc(UserBlock.created_at)
+        ).limit(limit).offset(offset).all()
+
+        result = []
+        for block, user in blocked:
+            result.append({
+                "user_id": str(user.id),
+                "username": user.display_name,
+                "email": user.email,
+                "avatar_url": user.photo_url,
+                "blocked_at": block.created_at,
+                "reason": block.reason
+            })
+
+        return result
+
+    # =========================================================================
+    # CONTENT REPORTING
+    # =========================================================================
+
+    def create_report(
+        self,
+        reporter_id: str,
+        content_id: str,
+        content_type: str,
+        reason: str,
+        additional_info: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Create a new content report"""
+        try:
+            reporter_uuid = uuid.UUID(reporter_id) if isinstance(reporter_id, str) else reporter_id
+
+            # Verify reporter exists
+            reporter = self.db.query(User).filter(User.id == reporter_uuid).first()
+            if not reporter:
+                raise ValueError("Reporter not found")
+
+            # Create report
+            report = ContentReport(
+                reporter_id=reporter_uuid,
+                content_id=content_id,
+                content_type=content_type,
+                reason=reason,
+                additional_info=additional_info,
+                status="pending"
+            )
+
+            self.db.add(report)
+            self.db.commit()
+            self.db.refresh(report)
+
+            logger.info(f"Report created: {report.id} for {content_type}:{content_id}")
+
+            return {
+                "report_id": str(report.id),
+                "message": "Report submitted successfully"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error creating report: {str(e)}")
+            raise
+
+    def get_user_reports(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
+    ) -> List[Dict[str, Any]]:
+        """Get reports submitted by a user"""
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+
+        reports = self.db.query(ContentReport).filter(
+            ContentReport.reporter_id == user_uuid
+        ).order_by(
+            desc(ContentReport.created_at)
+        ).limit(limit).offset(offset).all()
+
+        result = []
+        for report in reports:
+            result.append({
+                "id": str(report.id),
+                "content_id": report.content_id,
+                "content_type": report.content_type,
+                "reason": report.reason,
+                "additional_info": report.additional_info,
+                "status": report.status,
+                "created_at": report.created_at,
+                "reviewed_at": report.reviewed_at,
+                "resolution": report.resolution
+            })
+
+        return result
+
+    def get_all_reports(
+        self,
+        status: Optional[str] = None,
+        content_type: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """Get all reports (admin only) with optional filters"""
+        query = self.db.query(
+            ContentReport,
+            User
+        ).join(
+            User, ContentReport.reporter_id == User.id
+        )
+
+        if status:
+            query = query.filter(ContentReport.status == status)
+        if content_type:
+            query = query.filter(ContentReport.content_type == content_type)
+
+        # Get total count
+        total = query.count()
+
+        # Get paginated results
+        reports = query.order_by(
+            desc(ContentReport.created_at)
+        ).limit(limit).offset(offset).all()
+
+        result = []
+        for report, reporter in reports:
+            # Get reviewer info if exists
+            reviewer_name = None
+            if report.reviewed_by:
+                reviewer = self.db.query(User).filter(User.id == report.reviewed_by).first()
+                if reviewer:
+                    reviewer_name = reviewer.display_name or reviewer.email
+
+            result.append({
+                "id": str(report.id),
+                "reporter_id": str(report.reporter_id),
+                "reporter_email": reporter.email,
+                "reporter_name": reporter.display_name,
+                "content_id": report.content_id,
+                "content_type": report.content_type,
+                "reason": report.reason,
+                "additional_info": report.additional_info,
+                "status": report.status,
+                "created_at": report.created_at,
+                "reviewed_at": report.reviewed_at,
+                "reviewed_by": str(report.reviewed_by) if report.reviewed_by else None,
+                "reviewer_name": reviewer_name,
+                "resolution": report.resolution
+            })
+
+        return result, total
+
+    def update_report_status(
+        self,
+        report_id: str,
+        reviewer_id: str,
+        status: str,
+        resolution: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Update report status (admin only)"""
+        try:
+            report_uuid = uuid.UUID(report_id) if isinstance(report_id, str) else report_id
+            reviewer_uuid = uuid.UUID(reviewer_id) if isinstance(reviewer_id, str) else reviewer_id
+
+            report = self.db.query(ContentReport).filter(ContentReport.id == report_uuid).first()
+            if not report:
+                raise ValueError("Report not found")
+
+            # Validate status
+            valid_statuses = ["pending", "under_review", "resolved", "dismissed"]
+            if status not in valid_statuses:
+                raise ValueError(f"Invalid status. Must be one of: {valid_statuses}")
+
+            report.status = status
+            report.reviewed_by = reviewer_uuid
+            report.reviewed_at = datetime.utcnow()
+            if resolution:
+                report.resolution = resolution
+
+            self.db.commit()
+            self.db.refresh(report)
+
+            return {
+                "id": str(report.id),
+                "status": report.status,
+                "message": f"Report status updated to {status}"
+            }
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error updating report status: {str(e)}")
+            raise
+
+    # =========================================================================
+    # ACTIVITY FEED
+    # =========================================================================
+
+    def record_activity(
+        self,
+        user_id: str,
+        activity_type: str,
+        target_id: Optional[str] = None,
+        target_type: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """Record a user activity"""
+        try:
+            user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+
+            activity = UserActivity(
+                user_id=user_uuid,
+                activity_type=activity_type,
+                target_id=target_id,
+                target_type=target_type,
+                metadata=json.dumps(metadata) if metadata else None
+            )
+
+            self.db.add(activity)
+            self.db.commit()
+
+            return True
+
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Error recording activity: {str(e)}")
+            return False
+
+    def get_user_activity_feed(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0
+    ) -> Tuple[List[Dict[str, Any]], int]:
+        """Get activity feed for a user"""
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+
+        # Get total count
+        total = self.db.query(UserActivity).filter(
+            UserActivity.user_id == user_uuid
+        ).count()
+
+        # Get activities
+        activities = self.db.query(UserActivity).filter(
+            UserActivity.user_id == user_uuid
+        ).order_by(
+            desc(UserActivity.created_at)
+        ).limit(limit).offset(offset).all()
+
+        result = []
+        for activity in activities:
+            # Get target info based on target_type
+            target_name = None
+            target_avatar = None
+
+            if activity.target_id and activity.target_type:
+                if activity.target_type == "persona":
+                    try:
+                        persona = self.db.query(Persona).filter(
+                            Persona.id == uuid.UUID(activity.target_id)
+                        ).first()
+                        if persona:
+                            target_name = persona.name
+                            target_avatar = persona.image_path
+                    except:
+                        pass
+                elif activity.target_type == "user":
+                    try:
+                        user = self.db.query(User).filter(
+                            User.id == uuid.UUID(activity.target_id)
+                        ).first()
+                        if user:
+                            target_name = user.display_name or user.email
+                            target_avatar = user.photo_url
+                    except:
+                        pass
+
+            result.append({
+                "id": str(activity.id),
+                "activity_type": activity.activity_type,
+                "target_id": activity.target_id,
+                "target_type": activity.target_type,
+                "target_name": target_name,
+                "target_avatar": target_avatar,
+                "created_at": activity.created_at,
+                "metadata": json.loads(activity.metadata) if activity.metadata else None
+            })
+
+        return result, total

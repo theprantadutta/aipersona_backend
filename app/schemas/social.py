@@ -97,3 +97,117 @@ class FollowingListResponse(BaseModel):
     """List of users being followed"""
     following: List[FollowerInfo]
     total: int
+
+
+# User Blocking Schemas
+
+class BlockUserRequest(BaseModel):
+    """Request to block a user"""
+    reason: Optional[str] = Field(None, max_length=500, description="Optional reason for blocking")
+
+
+class BlockToggleResponse(BaseModel):
+    """Response for block toggle"""
+    is_blocked: bool
+    message: str
+
+
+class BlockedUserInfo(BaseModel):
+    """Blocked user info"""
+    user_id: str
+    username: Optional[str] = None
+    email: str
+    avatar_url: Optional[str] = None
+    blocked_at: datetime
+    reason: Optional[str] = None
+
+
+class BlockedUsersListResponse(BaseModel):
+    """List of blocked users"""
+    blocked_users: List[BlockedUserInfo]
+    total: int
+
+
+# Content Reporting Schemas
+
+class ReportContentRequest(BaseModel):
+    """Request to report content"""
+    content_id: str = Field(..., description="ID of the content being reported")
+    content_type: str = Field(..., description="Type of content: persona, user, conversation, message")
+    reason: str = Field(..., description="Reason for report")
+    additional_info: Optional[str] = Field(None, max_length=2000, description="Additional details about the report")
+
+
+class ReportResponse(BaseModel):
+    """Response for report submission"""
+    report_id: str
+    message: str
+
+
+class ReportInfo(BaseModel):
+    """Report information"""
+    id: str
+    content_id: str
+    content_type: str
+    reason: str
+    additional_info: Optional[str] = None
+    status: str
+    created_at: datetime
+    reviewed_at: Optional[datetime] = None
+    resolution: Optional[str] = None
+
+
+class ReportsListResponse(BaseModel):
+    """List of reports"""
+    reports: List[ReportInfo]
+    total: int
+
+
+class AdminReportInfo(BaseModel):
+    """Report info for admin view"""
+    id: str
+    reporter_id: str
+    reporter_email: Optional[str] = None
+    reporter_name: Optional[str] = None
+    content_id: str
+    content_type: str
+    reason: str
+    additional_info: Optional[str] = None
+    status: str
+    created_at: datetime
+    reviewed_at: Optional[datetime] = None
+    reviewed_by: Optional[str] = None
+    reviewer_name: Optional[str] = None
+    resolution: Optional[str] = None
+
+
+class AdminReportsListResponse(BaseModel):
+    """Admin list of reports"""
+    reports: List[AdminReportInfo]
+    total: int
+
+
+class UpdateReportStatusRequest(BaseModel):
+    """Request to update report status"""
+    status: str = Field(..., description="New status: under_review, resolved, dismissed")
+    resolution: Optional[str] = Field(None, max_length=2000, description="Resolution notes")
+
+
+# Activity Feed Schemas
+
+class ActivityInfo(BaseModel):
+    """Activity information"""
+    id: str
+    activity_type: str
+    target_id: Optional[str] = None
+    target_type: Optional[str] = None
+    target_name: Optional[str] = None  # Name of persona/user for display
+    target_avatar: Optional[str] = None  # Avatar URL for display
+    created_at: datetime
+    metadata: Optional[dict] = None
+
+
+class ActivityFeedResponse(BaseModel):
+    """Activity feed response"""
+    activities: List[ActivityInfo]
+    total: int

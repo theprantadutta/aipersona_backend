@@ -18,6 +18,12 @@ from app.schemas.admin import (
     ModerateContentResponse,
     SystemHealthResponse
 )
+from app.services.social_service import SocialService
+from app.schemas.social import (
+    AdminReportInfo,
+    AdminReportsListResponse,
+    UpdateReportStatusRequest
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -296,4 +302,121 @@ def get_system_health(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching system health: {str(e)}"
+        )
+
+
+# =============================================================================
+# CONTENT REPORTS ADMIN ENDPOINTS
+# =============================================================================
+
+@router.get("/reports", response_model=AdminReportsListResponse)
+def get_all_reports(
+    report_status: Optional[str] = Query(
+        None,
+        description="Filter by status: pending, under_review, resolved, dismissed"
+    ),
+    content_type: Optional[str] = Query(
+        None,
+        description="Filter by content type: persona, user, conversation, message"
+    ),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all content reports (Admin only)
+
+    - **report_status**: Filter by status (pending, under_review, resolved, dismissed)
+    - **content_type**: Filter by content type (persona, user, conversation, message)
+    - **page**: Page number (1-indexed)
+    - **page_size**: Number of items per page (max 100)
+
+    Returns all user-submitted reports for review
+
+    Requires admin authentication
+    """
+    try:
+        skip = (page - 1) * page_size
+        service = SocialService(db)
+        reports_data, total = service.get_all_reports(
+            status=report_status,
+            content_type=content_type,
+            limit=page_size,
+            offset=skip
+        )
+
+        reports = [
+            AdminReportInfo(
+                id=r["id"],
+                reporter_id=r["reporter_id"],
+                reporter_email=r["reporter_email"],
+                reporter_name=r["reporter_name"],
+                content_id=r["content_id"],
+                content_type=r["content_type"],
+                reason=r["reason"],
+                additional_info=r["additional_info"],
+                status=r["status"],
+                created_at=r["created_at"],
+                reviewed_at=r["reviewed_at"],
+                reviewed_by=r["reviewed_by"],
+                reviewer_name=r["reviewer_name"],
+                resolution=r["resolution"]
+            )
+            for r in reports_data
+        ]
+
+        return AdminReportsListResponse(
+            reports=reports,
+            total=total
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching reports: {str(e)}"
+        )
+
+
+@router.put("/reports/{report_id}/status", response_model=dict)
+def update_report_status(
+    report_id: str,
+    request: UpdateReportStatusRequest,
+    admin_user: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update report status (Admin only)
+
+    - **report_id**: ID of the report to update
+    - **status**: New status (under_review, resolved, dismissed)
+    - **resolution**: Optional resolution notes
+
+    Requires admin authentication
+    """
+    try:
+        # Validate status
+        valid_statuses = ["pending", "under_review", "resolved", "dismissed"]
+        if request.status not in valid_statuses:
+            raise ValueError(f"Invalid status. Must be one of: {valid_statuses}")
+
+        service = SocialService(db)
+        result = service.update_report_status(
+            report_id=report_id,
+            reviewer_id=str(admin_user.id),
+            status=request.status,
+            resolution=request.resolution
+        )
+
+        return result
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating report: {str(e)}"
         )

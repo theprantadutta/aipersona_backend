@@ -17,7 +17,20 @@ from app.schemas.social import (
     FavoritedPersona,
     FollowersListResponse,
     FollowingListResponse,
-    FollowerInfo
+    FollowerInfo,
+    # User Blocking
+    BlockUserRequest,
+    BlockToggleResponse,
+    BlockedUserInfo,
+    BlockedUsersListResponse,
+    # Content Reporting
+    ReportContentRequest,
+    ReportResponse,
+    ReportInfo,
+    ReportsListResponse,
+    # Activity Feed
+    ActivityInfo,
+    ActivityFeedResponse,
 )
 
 router = APIRouter(prefix="/social", tags=["social"])
@@ -473,4 +486,281 @@ def record_persona_view(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error recording view: {str(e)}"
+        )
+
+
+# =============================================================================
+# USER BLOCKING ENDPOINTS
+# =============================================================================
+
+@router.post("/users/{user_id}/block", response_model=BlockToggleResponse)
+def toggle_user_block(
+    user_id: str = Path(..., description="User ID to block/unblock"),
+    request: BlockUserRequest = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Toggle block on a user
+
+    - Blocking a user hides their content from you
+    - Blocking an already-blocked user will unblock them
+    - Cannot block yourself
+    """
+    try:
+        service = SocialService(db)
+        reason = request.reason if request else None
+        is_blocked, message = service.toggle_user_block(
+            blocker_id=str(current_user.id),
+            blocked_id=user_id,
+            reason=reason
+        )
+
+        return BlockToggleResponse(
+            is_blocked=is_blocked,
+            message=message
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error toggling block: {str(e)}"
+        )
+
+
+@router.get("/users/{user_id}/blocked", response_model=dict)
+def check_user_blocked(
+    user_id: str = Path(..., description="User ID to check"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Check if current user has blocked another user
+
+    Returns:
+    - is_blocked: boolean indicating if user is blocked
+    """
+    try:
+        service = SocialService(db)
+        is_blocked = service.check_user_blocked(
+            blocker_id=str(current_user.id),
+            blocked_id=user_id
+        )
+
+        return {"is_blocked": is_blocked}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error checking block status: {str(e)}"
+        )
+
+
+@router.get("/blocked-users", response_model=BlockedUsersListResponse)
+def get_blocked_users(
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get list of users blocked by current user
+
+    Returns:
+    - List of blocked users with details
+    - Ordered by most recently blocked
+    """
+    try:
+        service = SocialService(db)
+        blocked_data = service.get_blocked_users(
+            user_id=str(current_user.id),
+            limit=limit,
+            offset=offset
+        )
+
+        blocked_users = [
+            BlockedUserInfo(
+                user_id=b["user_id"],
+                username=b["username"],
+                email=b["email"],
+                avatar_url=b["avatar_url"],
+                blocked_at=b["blocked_at"],
+                reason=b["reason"]
+            )
+            for b in blocked_data
+        ]
+
+        return BlockedUsersListResponse(
+            blocked_users=blocked_users,
+            total=len(blocked_users)
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching blocked users: {str(e)}"
+        )
+
+
+# =============================================================================
+# CONTENT REPORTING ENDPOINTS
+# =============================================================================
+
+@router.post("/reports", response_model=ReportResponse)
+def create_report(
+    request: ReportContentRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Submit a content report
+
+    - Report types: persona, user, conversation, message
+    - Report reasons: inappropriate_content, harassment, spam, hate_speech,
+      violence, sexual_content, misinformation, copyright_violation, other
+    """
+    try:
+        # Validate content_type
+        valid_types = ["persona", "user", "conversation", "message"]
+        if request.content_type not in valid_types:
+            raise ValueError(f"Invalid content_type. Must be one of: {valid_types}")
+
+        # Validate reason
+        valid_reasons = [
+            "inappropriate_content", "harassment", "spam", "hate_speech",
+            "violence", "sexual_content", "misinformation", "copyright_violation", "other"
+        ]
+        if request.reason not in valid_reasons:
+            raise ValueError(f"Invalid reason. Must be one of: {valid_reasons}")
+
+        service = SocialService(db)
+        result = service.create_report(
+            reporter_id=str(current_user.id),
+            content_id=request.content_id,
+            content_type=request.content_type,
+            reason=request.reason,
+            additional_info=request.additional_info
+        )
+
+        return ReportResponse(
+            report_id=result["report_id"],
+            message=result["message"]
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating report: {str(e)}"
+        )
+
+
+@router.get("/reports", response_model=ReportsListResponse)
+def get_my_reports(
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get reports submitted by current user
+
+    Returns:
+    - List of reports with status
+    - Ordered by most recent
+    """
+    try:
+        service = SocialService(db)
+        reports_data = service.get_user_reports(
+            user_id=str(current_user.id),
+            limit=limit,
+            offset=offset
+        )
+
+        reports = [
+            ReportInfo(
+                id=r["id"],
+                content_id=r["content_id"],
+                content_type=r["content_type"],
+                reason=r["reason"],
+                additional_info=r["additional_info"],
+                status=r["status"],
+                created_at=r["created_at"],
+                reviewed_at=r["reviewed_at"],
+                resolution=r["resolution"]
+            )
+            for r in reports_data
+        ]
+
+        return ReportsListResponse(
+            reports=reports,
+            total=len(reports)
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching reports: {str(e)}"
+        )
+
+
+# =============================================================================
+# ACTIVITY FEED ENDPOINTS
+# =============================================================================
+
+@router.get("/users/{user_id}/activity", response_model=ActivityFeedResponse)
+def get_user_activity_feed(
+    user_id: str = Path(..., description="User ID"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of items to return"),
+    offset: int = Query(0, ge=0, description="Number of items to skip"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get activity feed for a user
+
+    Returns:
+    - List of user activities (likes, follows, persona creations, etc.)
+    - Ordered by most recent
+    """
+    try:
+        service = SocialService(db)
+        activities_data, total = service.get_user_activity_feed(
+            user_id=user_id,
+            limit=limit,
+            offset=offset
+        )
+
+        activities = [
+            ActivityInfo(
+                id=a["id"],
+                activity_type=a["activity_type"],
+                target_id=a["target_id"],
+                target_type=a["target_type"],
+                target_name=a["target_name"],
+                target_avatar=a["target_avatar"],
+                created_at=a["created_at"],
+                metadata=a["metadata"]
+            )
+            for a in activities_data
+        ]
+
+        return ActivityFeedResponse(
+            activities=activities,
+            total=total
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching activity feed: {str(e)}"
         )
