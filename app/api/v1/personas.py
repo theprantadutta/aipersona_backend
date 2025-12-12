@@ -9,6 +9,7 @@ from app.core.dependencies import get_current_user, get_optional_current_user
 from app.models.user import User
 from app.models.persona import Persona
 from app.services.persona_service import PersonaService
+from app.services.social_service import SocialService
 from app.schemas.persona import (
     PersonaCreate,
     PersonaUpdate,
@@ -23,12 +24,42 @@ from app.schemas.persona import (
 router = APIRouter(prefix="/personas", tags=["personas"])
 
 
-def persona_to_response(persona: Persona, current_user_id: Optional[UUID] = None) -> PersonaResponse:
-    """Convert Persona model to PersonaResponse with is_owner flag"""
+def persona_to_response(
+    persona: Persona,
+    current_user_id: Optional[UUID] = None,
+    is_liked: bool = False
+) -> PersonaResponse:
+    """Convert Persona model to PersonaResponse with is_owner and is_liked flags"""
     response = PersonaResponse.model_validate(persona)
     if current_user_id is not None:
         response.is_owner = str(persona.creator_id) == str(current_user_id)
+    response.is_liked = is_liked
     return response
+
+
+def personas_to_responses(
+    personas: List[Persona],
+    db: Session,
+    current_user_id: Optional[UUID] = None
+) -> List[PersonaResponse]:
+    """Convert list of Persona models to PersonaResponse with bulk is_liked lookup"""
+    if not personas:
+        return []
+
+    if current_user_id is None:
+        return [persona_to_response(p, current_user_id) for p in personas]
+
+    # Get all persona IDs for bulk lookup
+    persona_ids = [str(p.id) for p in personas]
+
+    # Bulk fetch liked status
+    social_service = SocialService(db)
+    liked_ids = social_service.get_liked_persona_ids(str(current_user_id), persona_ids)
+
+    return [
+        persona_to_response(p, current_user_id, is_liked=str(p.id) in liked_ids)
+        for p in personas
+    ]
 
 
 @router.get("", response_model=PersonaListResponse)
@@ -57,7 +88,7 @@ def get_user_personas(
         )
 
         return PersonaListResponse(
-            personas=[persona_to_response(p, current_user.id) for p in personas],
+            personas=personas_to_responses(personas, db, current_user.id),
             total=total,
             page=page,
             page_size=page_size
@@ -98,7 +129,8 @@ def create_persona(
             persona_data=persona_data
         )
 
-        return persona_to_response(persona, current_user.id)
+        # New persona is not liked yet
+        return persona_to_response(persona, current_user.id, is_liked=False)
 
     except ValueError as e:
         # User-facing errors (limits, validation)
@@ -132,7 +164,7 @@ def get_trending_personas(
         user_id = current_user.id if current_user else None
 
         return TrendingPersonasResponse(
-            personas=[persona_to_response(p, user_id) for p in personas],
+            personas=personas_to_responses(personas, db, user_id),
             timeframe=timeframe
         )
 
@@ -169,7 +201,7 @@ def get_public_personas(
         user_id = current_user.id if current_user else None
 
         return PersonaListResponse(
-            personas=[persona_to_response(p, user_id) for p in personas],
+            personas=personas_to_responses(personas, db, user_id),
             total=total,
             page=page,
             page_size=page_size
@@ -208,7 +240,7 @@ def search_personas(
         )
 
         return PersonaListResponse(
-            personas=[persona_to_response(p, current_user.id) for p in personas],
+            personas=personas_to_responses(personas, db, current_user.id),
             total=total,
             page=page,
             page_size=page_size
@@ -242,7 +274,11 @@ def get_persona(
                 detail="Persona not found or access denied"
             )
 
-        return persona_to_response(persona, current_user.id)
+        # Get like status for single persona
+        social_service = SocialService(db)
+        is_liked = social_service.check_persona_liked(str(current_user.id), persona_id)
+
+        return persona_to_response(persona, current_user.id, is_liked=is_liked)
 
     except HTTPException:
         raise
@@ -274,7 +310,11 @@ def update_persona(
             persona_data=persona_data
         )
 
-        return persona_to_response(persona, current_user.id)
+        # Get like status for updated persona
+        social_service = SocialService(db)
+        is_liked = social_service.check_persona_liked(str(current_user.id), persona_id)
+
+        return persona_to_response(persona, current_user.id, is_liked=is_liked)
 
     except ValueError as e:
         raise HTTPException(
@@ -346,7 +386,8 @@ def clone_persona(
             db.commit()
             db.refresh(persona)
 
-        return persona_to_response(persona, current_user.id)
+        # New clone is not liked yet
+        return persona_to_response(persona, current_user.id, is_liked=False)
 
     except ValueError as e:
         raise HTTPException(

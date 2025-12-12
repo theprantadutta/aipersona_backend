@@ -1,11 +1,15 @@
 """
 AI Persona Backend API - Main Application
 """
+import logging
 import os
 import sys
+import traceback
+import uuid
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -13,6 +17,9 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.api.v1 import api_router
 from app.database import init_db
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Create FastAPI application
 app = FastAPI(
@@ -29,6 +36,47 @@ app = FastAPI(
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Global exception handler for unhandled exceptions
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global exception handler that:
+    - In DEBUG mode: returns detailed error info for development
+    - In PRODUCTION mode: returns generic error message, logs details server-side
+    """
+    # Generate a unique error ID for tracking
+    error_id = str(uuid.uuid4())[:8]
+
+    # Always log the full error on the server
+    logger.error(
+        f"[ERROR_ID: {error_id}] Unhandled exception on {request.method} {request.url.path}",
+        exc_info=True
+    )
+
+    if settings.DEBUG:
+        # Development: return detailed error for debugging
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": str(exc),
+                "error_id": error_id,
+                "type": type(exc).__name__,
+                "path": str(request.url.path),
+                "traceback": traceback.format_exc()
+            }
+        )
+    else:
+        # Production: return generic error, hide internal details
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "An internal server error occurred. Please try again later.",
+                "error_id": error_id
+            }
+        )
+
 
 # CORS middleware
 app.add_middleware(
@@ -176,11 +224,20 @@ async def root():
 
 
 if __name__ == "__main__":
+    import argparse
     import uvicorn
+
+    parser = argparse.ArgumentParser(description="AI Persona Backend API")
+    parser.add_argument(
+        "--no-reload",
+        action="store_true",
+        help="Disable auto-reload on file changes"
+    )
+    args = parser.parse_args()
 
     uvicorn.run(
         "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG
+        reload=not args.no_reload
     )

@@ -40,6 +40,7 @@ class UsageHistoryResponse(BaseModel):
 class UsageAnalyticsResponse(BaseModel):
     """Advanced usage analytics"""
     current_usage: CurrentUsageResponse
+    daily_usage: List[UsageHistoryEntry]  # Daily breakdown for charts
     daily_average: float
     peak_usage_day: Optional[date] = None
     peak_usage_count: int

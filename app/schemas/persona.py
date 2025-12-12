@@ -61,6 +61,7 @@ class PersonaResponse(PersonaBase):
     created_at: datetime
     updated_at: datetime
     is_owner: bool = False  # Whether current user is the creator
+    is_liked: bool = False  # Whether current user has liked this persona
 
     @field_validator('id', 'creator_id', 'cloned_from_persona_id', 'original_creator_id', mode='before')
     @classmethod

@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models.social import PersonaLike, PersonaFavorite, UserFollow, PersonaView, UserBlock, ContentReport, UserActivity
 from app.models.persona import Persona
 from app.models.user import User
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Set
 from datetime import datetime
 import uuid
 import logging
@@ -98,6 +98,24 @@ class SocialService:
 
         return like is not None
 
+    def get_liked_persona_ids(self, user_id: str, persona_ids: List[str]) -> Set[str]:
+        """
+        Get set of persona IDs that the user has liked from a list of persona IDs.
+        Used for bulk lookups to avoid N+1 queries.
+        """
+        if not persona_ids:
+            return set()
+
+        user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
+        persona_uuids = [uuid.UUID(pid) if isinstance(pid, str) else pid for pid in persona_ids]
+
+        liked = self.db.query(PersonaLike.persona_id).filter(
+            PersonaLike.user_id == user_uuid,
+            PersonaLike.persona_id.in_(persona_uuids)
+        ).all()
+
+        return {str(like.persona_id) for like in liked}
+
     def toggle_persona_favorite(self, user_id: str, persona_id: str) -> bool:
         """
         Toggle favorite on a persona
@@ -179,37 +197,52 @@ class SocialService:
         offset: int = 0
     ) -> List[Dict[str, Any]]:
         """
-        Get favorited personas for a user with details
-        Returns list of favorited personas with creator info
-        Supports pagination with limit and offset
+        Get liked personas for a user with full details (liked = favorited).
+        Returns list of liked personas with complete persona info.
+        Supports pagination with limit and offset.
         """
         user_uuid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
 
-        # Join favorites with personas and users
+        # Join likes with personas and users (liked personas = favorites)
         favorites = self.db.query(
-            PersonaFavorite,
+            PersonaLike,
             Persona,
             User
         ).join(
-            Persona, PersonaFavorite.persona_id == Persona.id
+            Persona, PersonaLike.persona_id == Persona.id
         ).join(
             User, Persona.creator_id == User.id
         ).filter(
-            PersonaFavorite.user_id == user_uuid,
+            PersonaLike.user_id == user_uuid,
             Persona.status == "active"
         ).order_by(
-            desc(PersonaFavorite.created_at)
+            desc(PersonaLike.created_at)
         ).limit(limit).offset(offset).all()
 
         result = []
-        for favorite, persona, creator in favorites:
+        for like, persona, creator in favorites:
             result.append({
                 "persona_id": str(persona.id),
                 "persona_name": persona.name,
                 "persona_description": persona.description,
+                "persona_bio": persona.bio,
                 "persona_avatar_url": persona.image_path,
+                "creator_id": str(persona.creator_id),
                 "creator_name": creator.display_name or creator.email.split('@')[0],
-                "favorited_at": favorite.created_at
+                "creator_avatar_url": creator.photo_url,
+                "personality_traits": persona.personality_traits or [],
+                "expertise": persona.expertise or [],
+                "language_style": persona.language_style,
+                "tags": persona.tags or [],
+                "like_count": persona.like_count,
+                "conversation_count": persona.conversation_count,
+                "clone_count": persona.clone_count,
+                "is_public": persona.is_public,
+                "status": persona.status,
+                "created_at": persona.created_at,
+                "updated_at": persona.updated_at,
+                "favorited_at": like.created_at,
+                "is_liked": True,  # Always true since these are liked personas
             })
 
         return result

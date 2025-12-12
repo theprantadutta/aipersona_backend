@@ -179,8 +179,28 @@ class UsageService:
             "recommended_upgrade": trend == "increasing" and not current_usage["is_premium"]
         }
 
+        # Build daily_usage list sorted by date (fill in missing days with zeros)
+        daily_usage = []
+        entries_by_date = {str(e["date"]): e for e in history["entries"]}
+
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = str(current_date)
+            if date_str in entries_by_date:
+                daily_usage.append(entries_by_date[date_str])
+            else:
+                # Fill in missing days with zero values
+                daily_usage.append({
+                    "date": current_date,
+                    "messages_count": 0,
+                    "api_calls": 0,
+                    "tokens_used": 0
+                })
+            current_date += timedelta(days=1)
+
         return {
             "current_usage": current_usage,
+            "daily_usage": daily_usage,
             "daily_average": round(daily_average, 2),
             "peak_usage_day": peak_day,
             "peak_usage_count": peak_count,
