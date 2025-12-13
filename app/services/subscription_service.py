@@ -331,7 +331,9 @@ class SubscriptionService:
                 event_type="purchased",
                 product_id=purchase_data.product_id,
                 purchase_token=purchase_data.purchase_token,
-                expires_at=expires_at
+                subscription_tier=subscription_tier,
+                expires_at=expires_at,
+                verification_status="verified"
             )
             self.db.add(event)
 
@@ -389,9 +391,11 @@ class SubscriptionService:
         event = SubscriptionEvent(
             user_id=user_id,
             event_type="cancelled",
-            product_id=self.PLANS.get(user.subscription_tier, {}).get("google_play_product_id", ""),
-            purchase_token=user.google_play_purchase_token or "",
-            expires_at=user.subscription_expires_at
+            product_id=self.PLANS.get(user.subscription_tier, {}).get("google_play_product_id", "unknown"),
+            purchase_token=user.google_play_purchase_token or "cancelled",
+            subscription_tier=user.subscription_tier,
+            expires_at=user.subscription_expires_at or utc_now(),
+            verification_status="verified"
         )
         self.db.add(event)
         self.db.commit()
@@ -441,8 +445,11 @@ class SubscriptionService:
             event = SubscriptionEvent(
                 user_id=str(user.id),
                 event_type="expired",
-                product_id=self.PLANS.get(user.subscription_tier, {}).get("google_play_product_id", ""),
-                purchase_token=user.google_play_purchase_token or ""
+                product_id=self.PLANS.get(user.subscription_tier, {}).get("google_play_product_id", "unknown"),
+                purchase_token=user.google_play_purchase_token or "expired",
+                subscription_tier=user.subscription_tier,
+                expires_at=user.subscription_expires_at or now,
+                verification_status="verified"
             )
             self.db.add(event)
 

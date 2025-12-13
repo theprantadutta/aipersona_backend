@@ -38,7 +38,7 @@ class MarketplaceService:
         # Check if persona exists and belongs to user
         persona = self.db.query(Persona).filter(
             Persona.id == publish_data.persona_id,
-            Persona.user_id == user_id
+            Persona.creator_id == user_id
         ).first()
 
         if not persona:
@@ -247,17 +247,25 @@ class MarketplaceService:
         # Increment purchase count
         listing.purchases += 1
 
-        # Clone the persona for the buyer
+        # Increment clone count on original persona
         original_persona = listing.persona
+        original_persona.clone_count += 1
+
+        # Clone the persona for the buyer
         cloned_persona = Persona(
-            user_id=user_id,
+            creator_id=user_id,
             name=f"{original_persona.name} (Clone)",
             bio=original_persona.bio,
             description=original_persona.description,
-            avatar_url=original_persona.avatar_url,
+            image_path=original_persona.image_path,
             personality_traits=original_persona.personality_traits,
             language_style=original_persona.language_style,
             expertise=original_persona.expertise,
+            tags=original_persona.tags,
+            voice_id=original_persona.voice_id,
+            voice_settings=original_persona.voice_settings,
+            cloned_from_persona_id=original_persona.id,
+            original_creator_id=original_persona.creator_id,
             status="active",
             is_public=False
         )
