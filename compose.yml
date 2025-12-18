@@ -1,5 +1,5 @@
 services:
-  backend:
+  aipersona-backend:
     build: .
     env_file:
       - .env
@@ -13,10 +13,10 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`aipersona.pranta.dev`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.backend.loadbalancer.server.port=8001"
+      - "traefik.http.routers.aipersona.rule=Host(`aipersona.pranta.dev`)"
+      - "traefik.http.routers.aipersona.entrypoints=websecure"
+      - "traefik.http.routers.aipersona.tls.certresolver=letsencrypt"
+      - "traefik.http.services.aipersona.loadbalancer.server.port=8001"
 
 networks:
   proxy:
